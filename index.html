@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Star Wars Chronicles Prototype</title>
+  <style>
+    :root{
+      --bg:#05070d;
+      --panel:#0b0f18e8;
+      --panel2:#101722e8;
+      --line:#252b3a;
+      --line2:#374151;
+      --gold:#ffc51b;
+      --gold2:#d39c08;
+      --goldDim:#33270b;
+      --blue:#6aa7ff;
+      --cyan:#22b8e8;
+      --red:#ff5d62;
+      --green:#35d06f;
+      --purple:#c084fc;
+      --muted:#848ba0;
+      --text:#f3ead1;
+      --soft:#b8bed1;
+      --shadow:rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:#000;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+    body{
+      background:
+        radial-gradient(circle at 50% -20%, rgba(255,197,27,.08), transparent 34rem),
+        radial-gradient(circle at 90% 20%, rgba(34,184,232,.07), transparent 24rem),
+        #02040a;
+      overflow-x:hidden;
+    }
+    body:before{
+      content:"";
+      position:fixed;inset:0;pointer-events:none;opacity:.62;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.55) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.25) 1px, transparent 1.5px);
+      background-size: 96px 140px, 151px 111px;
+      background-position: 14px 22px, 62px 73px;
+      z-index:-1;
+    }
+    .app{max-width:760px;margin:0 auto;min-height:100vh;padding-bottom:24px;}
+    .screen{display:none;min-height:100vh;padding:26px 16px 88px;}
+    .screen.active{display:block;}
+    .topbar{
+      display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);
+      background:rgba(2,4,10,.9);position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);
+    }
+    .hamb,.back{width:34px;height:34px;display:grid;place-items:center;border:0;background:transparent;color:#aab0c2;font-size:26px;border-radius:10px;}
+    .hamb{font-size:24px}
+    .head-title{flex:1;min-width:0}
+    .head-title h2{margin:0;color:var(--gold);font-size:18px;line-height:1.05;text-shadow:0 0 15px rgba(255,197,27,.42);}
+    .head-title p{margin:4px 0 0;color:var(--muted);font-size:12px}
+    .section-label{color:var(--gold);letter-spacing:.16em;font-size:17px;text-transform:uppercase}
+
+    h1,h2,h3,.sci,.btn,.tab,.chip,.card-title,.label{
+      font-family: "Arial Narrow", "Trebuchet MS", system-ui, sans-serif;
+      letter-spacing:.075em;
+      text-transform:uppercase;
+      font-weight:500;
+    }
+    .logo-wrap{text-align:center;padding:22px 0 10px;}
+    .star-icon{
+      margin:0 auto 18px;width:84px;height:84px;border-radius:50%;border:2px solid rgba(255,197,27,.55);
+      display:grid;place-items:center;color:var(--gold);font-size:46px;box-shadow:0 0 34px rgba(255,197,27,.25);
+    }
+    .logo-star{font-size:56px;line-height:1;color:var(--gold);text-shadow:0 0 20px rgba(255,197,27,.8),0 0 40px rgba(255,197,27,.28);}
+    .logo-chron{font-size:26px;color:#8bbcff;margin-top:4px;}
+    .tagline{color:#8d91a0;font-size:16px;line-height:1.6;max-width:440px;margin:20px auto 28px;}
+    .row{display:flex;gap:10px;align-items:center}
+    .between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .btn{
+      border:1px solid rgba(255,197,27,.4);background:rgba(255,197,27,.12);color:var(--gold);
+      border-radius:10px;padding:14px 16px;font-size:18px;min-height:52px;text-align:center;
+      box-shadow:0 0 16px rgba(255,197,27,.08);cursor:pointer;
+    }
+    .btn.primary{background:linear-gradient(#ffd128,#e0a40b);color:#11131a;border-color:#ffd54a;font-weight:800;box-shadow:0 0 20px rgba(255,197,27,.25);}
+    .btn.blue{border-color:rgba(92,161,255,.45);color:#9fc6ff;background:rgba(38,75,133,.18)}
+    .btn.ghost{background:transparent;border-color:#263042;color:#8e96a9}
+    .btn.danger{border-color:rgba(255,93,98,.45);color:#ff8a8f;background:rgba(255,93,98,.12)}
+    .btn.full{width:100%}
+    .btn.small{min-height:36px;padding:8px 10px;font-size:13px;border-radius:9px}
+    .btn.icon{min-width:48px;padding:10px;font-size:22px}
+    .menu-actions{display:grid;gap:14px;max-width:480px;margin:0 auto 34px;}
+    .title-row{margin:24px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .title-row h3{margin:0;color:#858ca2;font-size:24px;line-height:1.35;}
+    .panel,.card{
+      background:linear-gradient(135deg,rgba(15,19,29,.92),rgba(5,8,15,.88));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.2);
+    }
+    .panel.gold{border-color:rgba(255,197,27,.22);box-shadow:inset 0 0 30px rgba(255,197,27,.03),0 20px 50px rgba(0,0,0,.28)}
+    .char-card,.camp-card,.option-card{
+      display:flex;align-items:center;gap:14px;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 14px;background:rgba(9,12,20,.72);
+      cursor:pointer;
+    }
+    .char-card.selected,.option-card.selected,.camp-card.selected{border-color:var(--gold);background:rgba(255,197,27,.10);box-shadow:0 0 16px rgba(255,197,27,.1)}
+    .avatar{width:58px;height:58px;border-radius:12px;background:linear-gradient(135deg,#3b2114,#101827 60%,#501b1b);display:grid;place-items:center;font-size:28px;flex:0 0 auto;overflow:hidden}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .card-title{font-size:20px;color:#fff1c5;line-height:1.15;text-transform:none;letter-spacing:.04em}
+    .card-sub{color:#8d93a6;font-size:13px;margin-top:4px;line-height:1.35}
+    .gold-heading{font-size:28px;color:var(--gold);text-shadow:0 0 14px rgba(255,197,27,.28);margin:0 0 14px;line-height:1.1}
+    .blue-heading{font-size:22px;color:var(--cyan);margin:0 0 12px}
+    .muted{color:var(--muted)}
+    .note{color:#8a90a2;line-height:1.5;font-size:14px}
+    .field{margin:16px 0;}
+    .label{display:block;color:#8e95aa;font-size:17px;margin:0 0 8px}
+    input,textarea,select{
+      width:100%;background:#101722;border:1px solid #1d2536;color:var(--text);border-radius:10px;padding:14px 14px;
+      font-size:18px;outline:none;font-family:inherit;
+    }
+    textarea{min-height:118px;resize:vertical;line-height:1.45}
+    input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 1px rgba(255,197,27,.3)}
+    .wizard-top{padding:0 14px 8px;}
+    .creation-title{text-align:center;color:var(--gold);font-size:34px;text-shadow:0 0 16px rgba(255,197,27,.5);margin:0 0 20px;}
+    .progress{display:grid;grid-template-columns:repeat(12,1fr);gap:7px;margin:0 0 10px}
+    .seg{height:7px;border-radius:99px;background:#1b2030}
+    .seg.on{background:linear-gradient(90deg,#8f6a0b,#ffc51b)}
+    .step-line{display:flex;justify-content:space-between;color:#969caf;font-size:20px;margin-bottom:20px}
+    .fixed-actions{
+      position:fixed;left:0;right:0;bottom:0;z-index:18;max-width:760px;margin:0 auto;padding:12px 16px;
+      background:linear-gradient(transparent,rgba(2,4,10,.96) 22%);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;
+    }
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .rules-card{align-items:flex-start}
+    .rules-card .ico{font-size:34px;width:54px;text-align:center;flex:0 0 auto}
+    .faction-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .faction{
+      min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(9,12,20,.7);padding:10px 6px
+    }
+    .orb{width:34px;height:34px;border-radius:50%;margin-bottom:10px;box-shadow:inset 4px 4px 8px rgba(255,255,255,.32)}
+    .orb.red{background:#ff353e}.orb.blue{background:#0874d8}.orb.white{background:#e6e6e6}
+    .faction.selected.empire{border-color:rgba(255,93,98,.5);background:rgba(255,93,98,.12)}
+    .faction.selected.republic{border-color:rgba(92,161,255,.5);background:rgba(92,161,255,.12)}
+    .faction.selected.neutral{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.08)}
+    .choice-list{display:grid;gap:12px}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      border:1px solid #252c3f;background:rgba(10,14,23,.75);color:#8f96aa;border-radius:999px;padding:9px 14px;font-size:14px;text-transform:none;cursor:pointer;
+    }
+    .chip.selected{color:var(--gold);border-color:var(--gold);background:rgba(255,197,27,.14)}
+    .chip.blue{color:#9fc6ff;border-color:rgba(92,161,255,.4)}
+    .species-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:330px;overflow:auto;padding-right:4px;}
+    .species-btn{font-size:16px;text-align:left;padding:12px 10px;border:1px solid #20283a;background:rgba(7,10,17,.72);color:#8e96aa;border-radius:12px;text-transform:none}
+    .species-btn.selected{color:var(--gold);border-color:var(--gold);background:rgba(255,197,27,.14)}
+    .mods{border:1px solid rgba(255,197,27,.26);border-radius:16px;padding:16px;margin:16px 0;background:rgba(255,197,27,.04)}
+    .badge{display:inline-flex;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:7px 12px;margin:5px;background:rgba(255,255,255,.04);font-weight:800;letter-spacing:.05em}
+    .badge.good{color:var(--cyan);border-color:rgba(34,184,232,.35);background:rgba(34,184,232,.12)}
+    .badge.bad{color:#ff7075;border-color:rgba(255,93,98,.35);background:rgba(255,93,98,.12)}
+    .leveler{display:flex;align-items:center;gap:24px;margin:10px 0}
+    .leveler .num{font-size:50px;color:#fff1c5}
+    .class-card{border:1px solid #20283a;background:rgba(7,10,17,.72);border-radius:14px;padding:16px;margin:12px 0}
+    .class-card.selected{border-color:var(--gold);box-shadow:0 0 16px rgba(255,197,27,.12)}
+    .class-card h3{text-transform:none;letter-spacing:.02em;font-size:23px;margin:0;color:#ff777d}
+    .class-card.purple h3{color:#d6a3ff}.class-card.blue h3{color:#9fc6ff}.class-card.yellow h3{color:#ffe05c}
+    .table{width:100%;border-collapse:collapse;color:#dcd2b8;font-size:14px;margin:12px 0}
+    .table td,.table th{border-bottom:1px solid rgba(255,255,255,.06);padding:7px;text-align:center}
+    .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .statbox{border:1px solid rgba(34,184,232,.18);border-radius:17px;background:rgba(9,17,27,.78);padding:15px;text-align:center}
+    .statbox .name{font-size:20px;color:#8f96aa;letter-spacing:.12em}
+    .statbox .value{font-size:44px;color:#fff1c5}
+    .statbox .mod{color:var(--cyan);font-size:18px}
+    .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .mini-stat{background:rgba(13,19,30,.78);border-radius:14px;padding:12px;text-align:center}
+    .mini-stat label{display:block;color:#8e95aa;font-size:15px}.mini-stat strong{font-size:23px;color:#fff1c5}
+    .library-card{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid #20283a;background:rgba(7,10,17,.72);border-radius:14px;padding:14px;margin:12px 0}
+    .library-card h3{margin:0;font-size:22px;text-transform:none;color:#fff1c5}
+    .library-card p{margin:6px 0 0;color:#8e95aa;font-size:13px;line-height:1.4}
+    .plus{width:40px;height:40px;border-radius:10px;border:1px solid rgba(53,208,111,.4);background:rgba(53,208,111,.08);color:#6df09b;font-size:24px}
+    .resource-card{border:1px solid rgba(192,132,252,.35);background:rgba(192,132,252,.08);border-radius:16px;padding:16px;margin-bottom:16px}
+    .big-num{font-size:52px;color:#d6a3ff}
+
+    .story-layout{padding:0 0 90px}
+    .collapser{border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:14px 16px;background:rgba(8,10,16,.82)}
+    .collapser .label{margin:0;color:#8e95aa;font-size:22px;display:flex;align-items:center;justify-content:space-between}
+    .scene-img{
+      height:470px;background:
+        radial-gradient(circle at 50% 3%, rgba(255,0,0,.75), transparent 28%),
+        radial-gradient(circle at 48% 16%, #8b1717, transparent 30%),
+        linear-gradient(180deg,#250707 0%,#121722 38%,#0b0f17 100%);
+      border-top:1px solid #20283a;border-bottom:1px solid #20283a;position:relative;overflow:hidden;
+    }
+    .scene-img:before{
+      content:"";position:absolute;inset:0;background:
+        radial-gradient(circle at 30% 58%, rgba(84,164,255,.65) 0 5px, transparent 8px),
+        radial-gradient(circle at 68% 58%, rgba(84,164,255,.65) 0 5px, transparent 8px),
+        linear-gradient(160deg, transparent 42%, rgba(68,93,123,.75) 43% 48%, transparent 49%),
+        linear-gradient(200deg, transparent 42%, rgba(68,93,123,.75) 43% 48%, transparent 49%),
+        linear-gradient(180deg, transparent 55%, rgba(9,12,18,.94) 56%);
+      opacity:.9
+    }
+    .scene-img:after{
+      content:"Cin'Bedil";position:absolute;bottom:58px;left:0;right:0;text-align:center;font-size:10px;color:#dcdcdc;
+    }
+    .img-tools{position:absolute;right:12px;top:12px;display:flex;gap:8px}
+    .img-tools button{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:10px;width:44px;height:44px;font-size:22px}
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(3,5,10,.95)}
+    .mode-tabs button{border:0;border-radius:0;background:transparent;color:#9aa1b4;padding:18px 8px;font-size:19px}
+    .mode-tabs button.active{color:var(--gold);border-bottom:3px solid var(--gold);background:rgba(255,197,27,.06)}
+    .story-card{margin:18px 16px;border:1px solid rgba(34,184,232,.22);border-radius:18px;background:rgba(12,19,28,.86);padding:24px 28px;color:#f5edd7;line-height:1.75;font-size:20px;box-shadow:0 0 22px rgba(34,184,232,.06)}
+    .input-area{padding:12px 16px 30px}
+    .input-title{color:var(--gold);font-size:18px;margin:0 0 8px}
+    .send-row{display:grid;grid-template-columns:1fr 62px;gap:10px}
+    .send-row textarea{min-height:80px}
+    .send-btn{background:linear-gradient(#ffc51b,#a87b06);color:#080a10;border-radius:12px;font-size:26px}
+    .drawer{
+      position:fixed;top:0;bottom:0;left:0;width:min(82vw,420px);background:#0a0d14;z-index:50;
+      transform:translateX(-110%);transition:.22s ease;border-right:1px solid rgba(255,255,255,.08);box-shadow:16px 0 40px rgba(0,0,0,.55);
+      padding:28px 16px;overflow:auto;
+    }
+    .drawer.open{transform:translateX(0)}
+    .shade{position:fixed;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(2px);z-index:49;display:none}
+    .shade.open{display:block}
+    .navitem{display:flex;align-items:center;gap:18px;padding:15px 18px;border-radius:12px;margin:8px 0;color:#8e96aa;font-size:22px;letter-spacing:.08em;text-transform:uppercase}
+    .navitem.active{background:rgba(255,197,27,.13);color:var(--gold);border-left:3px solid var(--gold)}
+    .char-sheet-tabs{display:flex;overflow:auto;gap:0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07);background:rgba(5,7,12,.88)}
+    .sheet-tab{white-space:nowrap;background:transparent;border:0;border-radius:0;color:#8e96aa;padding:18px 22px;font-size:17px}
+    .sheet-tab.active{color:var(--gold);border-bottom:3px solid var(--gold)}
+    .resource-row{padding:18px 16px}
+    .barline{display:grid;grid-template-columns:28px 1fr 80px;gap:10px;align-items:center;margin:10px 0}
+    .bar{height:14px;border-radius:99px;background:#151b27;overflow:hidden}.fill{height:100%;border-radius:99px}.fill.hp{background:#d53c45}.fill.fp{background:#cba10d}
+    .def-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+    .def{border:1px solid rgba(34,184,232,.17);border-radius:10px;background:rgba(9,17,27,.78);padding:14px;text-align:center}
+    .def label{color:#9aa1b4;font-size:19px}.def strong{display:block;color:var(--cyan);font-size:32px}
+    .sheet-pane{padding:18px 16px}
+    .ability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .ability{border:1px solid rgba(255,197,27,.15);border-radius:13px;background:rgba(12,16,24,.82);padding:16px;text-align:center}
+    .ability label{color:#9aa1b4;font-size:18px}.ability strong{display:block;font-size:36px}.ability span{color:var(--gold)}
+    .skill-row{display:grid;grid-template-columns:32px 1fr 90px 42px;gap:8px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .check{width:22px;height:22px;border:1px solid #2f374a;border-radius:7px}.check.on{background:var(--gold);box-shadow:inset 0 0 0 5px #2a2108}
+    .skill-name{color:#c9cdda}.skill-val{color:var(--gold);text-align:right;font-weight:800}.skill-detail{border:1px solid rgba(255,197,27,.35);background:rgba(255,197,27,.08);color:var(--gold);border-radius:9px;min-height:34px}
+
+    @media(max-width:420px){
+      .screen{padding-left:14px;padding-right:14px}
+      .logo-star{font-size:46px}.logo-chron{font-size:23px}
+      .gold-heading{font-size:25px}.creation-title{font-size:29px}
+      .grid3,.faction-grid{gap:8px}
+      .faction{min-height:118px}
+      .faction .card-title{font-size:18px}
+      .species-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+      .species-btn{font-size:14px}
+      .ability-grid{grid-template-columns:repeat(2,1fr)}
+      .story-card{font-size:19px;padding:20px 24px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <section id="dashboard" class="screen active">
+    <div class="logo-wrap">
+      <div class="star-icon">★</div>
+      <div class="logo-star sci">STAR WARS</div>
+      <div class="logo-chron sci">CHRONICLES</div>
+      <p class="tagline">An AI Game Master awaits. Build your character, choose your era, and forge your destiny.</p>
+    </div>
+
+    <div class="menu-actions">
+      <button class="btn primary full" onclick="showScreen('newCampaign')">＋ New Campaign</button>
+      <button class="btn blue full" onclick="openCampaign()">▷ Continue</button>
+    </div>
+
+    <div class="title-row">
+      <h3>Character<br>Library</h3>
+      <button class="btn primary" onclick="startCharacter()">＋ New Character</button>
+    </div>
+    <div class="char-card" onclick="showScreen('characterSheet')">
+      <div class="avatar">⚔️</div>
+      <div>
+        <div class="card-title">Cin'Bedil</div>
+        <div class="card-sub">Lvl 1 · Twi'lek Sith Initiate</div>
+      </div>
+    </div>
+
+    <div class="title-row"><h3>Recent Campaigns</h3></div>
+    <div class="camp-card selected" onclick="openCampaign()">
+      <div class="avatar">🗡️</div>
+      <div>
+        <div class="card-title">The Old Republic Dark Side Campaign</div>
+        <div class="card-sub">Old Republic · Custom</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="newCampaign" class="screen">
+    <button class="back" onclick="showScreen('dashboard')">‹</button>
+    <h1 class="gold-heading" style="text-align:center">New Campaign</h1>
+
+    <div class="panel gold">
+      <h2 class="gold-heading" style="font-size:22px">Select Character</h2>
+      <div class="char-card selected">
+        <div>
+          <div class="card-title">Cin'Bedil</div>
+          <div class="card-sub">Lvl 1 Twi'lek Sith Initiate</div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:14px;cursor:pointer" onclick="startCharacter()">＋ Create a new character</div>
+    </div>
+
+    <div class="panel gold" style="margin-top:28px">
+      <div class="field">
+        <label class="label">Campaign Name</label>
+        <input id="campaignName" value="Dark Side Campaign" placeholder="Name your adventure..." />
+      </div>
+    </div>
+
+    <div class="panel gold" style="margin-top:28px" id="campaignRulesPanel">
+      <h2 class="gold-heading" style="font-size:22px">Ruleset</h2>
+      <div class="choice-list">
+        <div class="option-card" onclick="selectCampaignRule(this,'Star Wars Saga Edition')">
+          <div style="font-size:32px">⚔️</div>
+          <div><div class="card-title" style="color:#9fc6ff">Star Wars Saga Edition</div><div class="card-sub">Official WotC Rules</div></div>
+        </div>
+        <div class="option-card selected" onclick="selectCampaignRule(this,'Old Republic Campaign Rules')">
+          <div style="font-size:32px">🌌</div>
+          <div><div class="card-title" style="color:var(--gold)">Old Republic Campaign Rules</div><div class="card-sub">Custom Campaign Rules</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:22px 0" class="pill-row">
+      <span class="chip blue selected">🌌 Old Republic Campaign Rules · ×</span>
+      <span class="chip blue selected">⌖ Starting: Korriban</span>
+    </div>
+
+    <div class="panel gold">
+      <div class="option-card" onclick="quickStartCampaign()" style="margin-bottom:14px">
+        <div style="font-size:34px;color:var(--gold)">⚡</div>
+        <div><h2 class="card-title">Quick Start</h2><div class="card-sub">AI generates a campaign instantly based on your character.</div></div>
+      </div>
+      <div class="option-card" onclick="generateQuestions()">
+        <div style="font-size:34px;color:var(--cyan)">📜</div>
+        <div><h2 class="card-title">Custom Campaign</h2><div class="card-sub">Answer AI questions to craft a personalized adventure.</div></div>
+      </div>
+    </div>
+
+    <div id="questionLoad" class="panel gold" style="margin-top:28px;display:none">
+      <h2 class="blue-heading">◌ Generating Questions...</h2>
+    </div>
+
+    <div id="questionPanel" class="panel gold" style="margin-top:28px;display:none">
+      <h2 class="blue-heading">✧ Question 1 of 5</h2>
+      <p style="font-size:24px;line-height:1.55;margin:18px 0;color:#fff1c5">What tone do you envision for your Twi'lek Sith Initiate's journey?</p>
+      <div class="pill-row">
+        <span class="chip" onclick="this.classList.toggle('selected')">Dark and brooding</span>
+        <span class="chip" onclick="this.classList.toggle('selected')">Epic and adventurous</span>
+        <span class="chip" onclick="this.classList.toggle('selected')">Mysterious and suspenseful</span>
+        <span class="chip" onclick="this.classList.toggle('selected')">Intriguing with twists</span>
+        <span class="chip" onclick="this.classList.toggle('selected')">Tragic and melancholic</span>
+      </div>
+      <div class="send-row" style="margin-top:18px">
+        <textarea placeholder="Your answer..."></textarea>
+        <button class="send-btn" onclick="openCampaign()">➤</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="characterWizard" class="screen">
+    <div class="wizard-top">
+      <button class="back" onclick="showScreen('dashboard')">‹</button>
+      <h1 class="creation-title">Character Creation</h1>
+      <div class="progress" id="charProgress"></div>
+      <div class="step-line"><span id="stepNum">Step 1 / 12</span><span id="stepName">Ruleset</span></div>
+    </div>
+
+    <div id="charStepContent"></div>
+
+    <div class="fixed-actions">
+      <button class="btn ghost" onclick="prevCharStep()">‹ Back</button>
+      <button class="btn primary" onclick="nextCharStep()">Next ›</button>
+    </div>
+  </section>
+
+  <section id="campaign" class="screen story-layout">
+    <div class="topbar">
+      <button class="hamb" onclick="toggleDrawer(true)">☰</button>
+      <div class="head-title">
+        <h2>The Old Republic Dark Side Campaign</h2>
+        <p>Old Republic · Cin'Bedil</p>
+      </div>
+      <div class="section-label" id="campaignSectionLabel">Story</div>
+    </div>
+
+    <div id="storyView">
+      <div class="collapser" onclick="toggleSound()"><div class="label">♫ Soundtrack <span>⌄</span></div></div>
+      <div class="collapser" onclick="toggleScene()"><div class="label">▧ Scene Image <span id="sceneChevron">⌄</span></div></div>
+      <div id="sceneImage" class="scene-img" style="display:none">
+        <div class="img-tools">
+          <button title="Expand">↗</button><button title="Edit prompt">⌘</button><button title="Retry">↻</button>
+        </div>
+      </div>
+
+      <div class="mode-tabs">
+        <button id="inCharTab" class="active" onclick="setMode('in')">⚔ In Character</button>
+        <button id="outCharTab" onclick="setMode('out')">▢ Out of Character</button>
+      </div>
+
+      <div class="story-card" id="storyText">
+        The red sands of Korriban scrape across the landing platform as the academy shuttle powers down. The overseer waits at the foot of the ramp, hands folded behind his back, expression carved from contempt.<br><br>
+        “Initiate Cin'Bedil,” he says, “your first trial begins before sunset.”<br><br>
+        What do you wish to do?<br><br>
+        1. Head towards the tomb directly.<br><br>
+        2. Look for a way to gather information or allies from other initiates.<br><br>
+        3. Examine your surroundings before proceeding.<br><br>
+        4. Confront the overseer and inquire about specifics of the trial.
+      </div>
+
+      <div class="input-area">
+        <div class="input-title" id="inputTitle">⚔ In Character <span class="muted">— story, actions, dialogue</span></div>
+        <div class="send-row">
+          <textarea id="storyInput" placeholder="What do you do? Describe your action..."></textarea>
+          <button class="send-btn" onclick="mockSend()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="campaignPlaceholder" style="display:none;padding:20px 16px">
+      <div class="panel gold">
+        <h2 class="gold-heading" id="placeholderTitle">Section</h2>
+        <p class="note" id="placeholderText">This section is included in the navigation test build. We’ll flesh it out after the core flow feels right.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="characterSheet" class="screen story-layout">
+    <div class="topbar">
+      <button class="hamb" onclick="toggleDrawer(true)">☰</button>
+      <div class="head-title">
+        <h2>The Old Republic Dark Side Campaign</h2>
+        <p>Old Republic · Cin'Bedil</p>
+      </div>
+      <div class="section-label">Character</div>
+    </div>
+
+    <div class="resource-row">
+      <div class="between">
+        <div>
+          <h2 class="gold-heading" style="font-size:23px;margin:0">Cin'Bedil</h2>
+          <div class="card-sub">Twi'lek Sith Initiate · Lvl 1</div>
+        </div>
+        <button class="btn primary small">▣ Save</button>
+      </div>
+
+      <div class="barline"><span style="color:#ff777d">♡</span><div class="bar"><div class="fill hp" style="width:100%"></div></div><div class="row"><input style="padding:8px;text-align:center" value="9"><span>/</span><input style="padding:8px;text-align:center" value="9"></div></div>
+      <div class="barline"><span style="color:var(--gold)">↯</span><div class="bar"><div class="fill fp" style="width:100%"></div></div><div class="row"><input style="padding:8px;text-align:center" value="6"><span>/</span><input style="padding:8px;text-align:center" value="4"></div></div>
+
+      <div class="def-grid">
+        <div class="def"><label>REF</label><strong>15</strong></div>
+        <div class="def"><label>FORT</label><strong>12</strong></div>
+        <div class="def"><label>WILL</label><strong>14</strong></div>
+      </div>
+    </div>
+
+    <div class="char-sheet-tabs">
+      <button class="sheet-tab active" onclick="sheetTab('stats',this)">Stats</button>
+      <button class="sheet-tab" onclick="sheetTab('skills',this)">Skills</button>
+      <button class="sheet-tab" onclick="sheetTab('combat',this)">Combat</button>
+      <button class="sheet-tab" onclick="sheetTab('abilities',this)">Abilities</button>
+      <button class="sheet-tab" onclick="sheetTab('equipment',this)">Equipment</button>
+    </div>
+
+    <div id="sheetStats" class="sheet-pane">
+      <div class="ability-grid">
+        <div class="ability"><label>STR</label><strong>12</strong><span>+1</span></div>
+        <div class="ability"><label>DEX</label><strong>18</strong><span>+4</span></div>
+        <div class="ability"><label>CON</label><strong>12</strong><span>+1</span></div>
+        <div class="ability"><label>INT</label><strong>13</strong><span>+1</span></div>
+        <div class="ability"><label>WIS</label><strong>14</strong><span>+2</span></div>
+        <div class="ability"><label>CHA</label><strong>14</strong><span>+2</span></div>
+      </div>
+      <div class="preview-grid" style="margin-top:16px">
+        <div class="mini-stat"><label>Speed</label><strong>6</strong></div>
+        <div class="mini-stat"><label>DT</label><strong>12</strong></div>
+        <div class="mini-stat"><label>Credits</label><strong>1000</strong></div>
+        <div class="mini-stat"><label>XP</label><strong>0</strong></div>
+      </div>
+    </div>
+
+    <div id="sheetSkills" class="sheet-pane" style="display:none">
+      <div id="skillList"></div>
+    </div>
+
+    <div id="sheetOther" class="sheet-pane" style="display:none">
+      <div class="panel gold"><h2 class="gold-heading" id="sheetOtherTitle">Combat</h2><p class="note">Placeholder section for this test build. This will hold attacks, abilities, gear, Force powers, talents, and other crunchy goblin math later.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="shade" id="shade" onclick="toggleDrawer(false)"></div>
+<aside class="drawer" id="drawer">
+  <div class="between"><h2 class="gold-heading" style="font-size:20px">Navigation</h2><button class="back" onclick="toggleDrawer(false)">×</button></div>
+  <div class="navitem active" onclick="navTo('Story')">📖 Story</div>
+  <div class="navitem" onclick="navTo('Quests')">📜 Quests</div>
+  <div class="navitem" onclick="navTo('Map')">🗺 Map</div>
+  <div class="navitem" onclick="navTo('Ship')">🚀 Ship</div>
+  <div class="navitem" onclick="showScreen('characterSheet');toggleDrawer(false)">♙ Character</div>
+  <div class="navitem" onclick="navTo('Progression')">↗ Progression</div>
+  <div class="navitem" onclick="navTo('Inventory')">⬡ Inventory</div>
+  <div class="navitem" onclick="navTo('Shop')">▣ Shop</div>
+  <div class="navitem" onclick="navTo('Party')">☷ Party</div>
+  <div class="navitem" onclick="navTo('Bonds')">🔗 Bonds</div>
+  <div class="navitem" onclick="navTo('Journal')">▤ Journal</div>
+  <div class="navitem" onclick="navTo('Campaign')">⚙ Campaign</div>
+</aside>
+
+<script>
+  let charStep = 1;
+  let mode = 'in';
+  let sceneOpen = false;
+
+  const species = ["Human","Twi'lek","Zabrak","Bothan","Wookiee","Rodian","Mirialan","Togruta","Kel Dor","Mon Calamari","Duros","Nautolan","Chiss","Weequay","Ithorian","Selkath","Squib","Shistavanen","Defel","Codru-Ji","Feeorin","Geonosian","Givin","Klatooinian","Lurmen","Mustafarian","Snivvian","Tholothian"];
+  const skills = [
+    ["Deception","+8 TRN",true],["Endurance","+1 RAW",false],["Gather Information","+2 RAW",false],
+    ["Initiative","+10 TRN",true],["Jump","+1 RAW",false],["Knowledge (Galactic Lore)","+1 RAW",false],
+    ["Knowledge (Social Sciences)","+1 RAW",false],["Mechanics","+1 RAW",false],["Persuasion","+2 RAW",false],
+    ["Pilot","+4 RAW",false],["Stealth","+4 RAW",false],["Use the Force","+7 TRN",true]
+  ];
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+  function openCampaign(){showScreen('campaign')}
+  function startCharacter(){charStep=1;showScreen('characterWizard');renderCharStep()}
+
+  function selectCampaignRule(el, name){
+    document.querySelectorAll('#campaignRulesPanel .option-card').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function generateQuestions(){
+    document.getElementById('questionLoad').style.display='block';
+    document.getElementById('questionPanel').style.display='none';
+    setTimeout(()=>{
+      document.getElementById('questionLoad').style.display='none';
+      document.getElementById('questionPanel').style.display='block';
+      document.getElementById('questionPanel').scrollIntoView({behavior:'smooth',block:'center'});
+    },700);
+  }
+  function quickStartCampaign(){ openCampaign(); }
+
+  function renderProgress(){
+    const p=document.getElementById('charProgress');
+    p.innerHTML='';
+    for(let i=1;i<=12;i++){const seg=document.createElement('div');seg.className='seg'+(i<=charStep?' on':'');p.appendChild(seg);}
+    document.getElementById('stepNum').textContent=`Step ${charStep} / 12`;
+  }
+  function renderCharStep(){
+    renderProgress();
+    const c=document.getElementById('charStepContent');
+    const names = {
+      1:'Ruleset',2:'Identity',3:'Portrait',4:'Species',5:'Sith Class',6:'Attributes',7:'Force Powers',8:'Techniques',9:'Talents',10:'Equipment',11:'Background',12:'Review'
+    };
+    document.getElementById('stepName').textContent=names[charStep]||'Step';
+    if(charStep===1){
+      c.innerHTML=`
+      <div class="panel gold">
+        <h2 class="gold-heading">Choose Ruleset</h2>
+        <p class="note">Select which ruleset governs this character's progression, abilities, and class options.</p>
+        <div class="choice-list" style="margin-top:18px">
+          <div class="option-card rules-card"><div class="ico">⚔️</div><div><div class="card-title">Star Wars Saga Edition</div><div class="card-sub">Official WotC Rules</div><p class="note">The complete, unmodified Star Wars Saga Edition ruleset.</p></div></div>
+          <div class="option-card rules-card selected"><div class="ico">🌌</div><div><div class="card-title">Old Republic Campaign Rules</div><div class="card-sub">Custom Campaign Rules</div><p class="note">A custom campaign ruleset for an Old Republic era campaign. Choose Empire, Republic, or Neutral.</p></div></div>
+        </div>
+        <div class="field"><label class="label">Choose Faction *</label><p class="note">Your faction determines class options and shapes your role in the galaxy.</p></div>
+        <div class="faction-grid">
+          <div class="faction selected empire"><div class="orb red"></div><div class="card-title">Empire</div><div class="card-sub">Sith Order & Imperial Military</div></div>
+          <div class="faction republic"><div class="orb blue"></div><div class="card-title">Republic</div><div class="card-sub">Jedi Order & Republic Military</div></div>
+          <div class="faction neutral"><div class="orb white"></div><div class="card-title">Neutral</div><div class="card-sub">Freeblades & Independents</div></div>
+        </div>
+      </div>`;
+    } else if(charStep===2){
+      c.innerHTML=`
+      <div class="panel gold">
+        <h2 class="gold-heading">Identity</h2><p class="note">Name your character and choose their era and alignment.</p>
+        <div class="field"><label class="label">Character Name *</label><input value="Cin'Bedil" placeholder="e.g. Kael Doran"></div>
+        <div class="field"><label class="label">Choose Your Era *</label>
+          <div class="choice-list">
+            ${["Old Republic","Rise of the Empire","Galactic Civil War","New Republic","New Jedi Order"].map((x,i)=>`<div class="option-card ${i===0?'selected':''}"><div class="card-title">${x}</div></div>`).join('')}
+          </div>
+        </div>
+        <div class="field"><label class="label">Alignment</label>
+          <div class="grid3"><button class="btn ghost">Light Side</button><button class="btn primary">Gray</button><button class="btn ghost">Dark Side</button></div>
+        </div>
+      </div>`;
+    } else if(charStep===3){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Character Portrait</h2><p class="note">Choose how to create your character's image.</p>
+        <div class="choice-list">
+          <div class="option-card"><div style="font-size:30px">⇧</div><div><div class="card-title">Upload Image</div><div class="card-sub">Use your own artwork or photo</div></div></div>
+          <div class="option-card"><div style="font-size:30px">✧</div><div><div class="card-title">AI From Description</div><div class="card-sub">Type a description and generate</div></div></div>
+          <div class="option-card"><div style="font-size:30px">?</div><div><div class="card-title">AI Guided</div><div class="card-sub">Answer questions to build the image</div></div></div>
+        </div><p class="note" style="margin-top:18px">You can also skip this step and add a portrait later.</p></div>`;
+    } else if(charStep===4){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Species</h2><p class="note">Choose your character's species. You'll select your Sith class in the next step.</p>
+        <div class="field"><label class="label">Species *</label><input placeholder="Search species..."></div>
+        <div class="species-grid">${species.map(s=>`<button class="species-btn ${s==="Twi'lek"?'selected':''}">${s==="Twi'lek"?'✓ ':''}${s}</button>`).join('')}</div>
+        <div class="mods"><div class="label">Twi'lek Racial Modifiers</div><span class="badge good">CHA +2</span><span class="badge bad">INT -2</span></div>
+        <div class="field"><label class="label">Level</label><div class="leveler"><button class="btn ghost icon">-</button><span class="num">1</span><button class="btn ghost icon">+</button><span class="muted">(1-20)</span></div></div>
+      </div>`;
+    } else if(charStep===5){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Class Selection</h2><p class="note">Choose your faction, class, and path.</p>
+        <div class="faction-grid">
+          <div class="faction selected empire"><div class="orb red"></div><div class="card-title">Empire</div><div class="card-sub">Sith Order & Imperial Military</div></div>
+          <div class="faction republic"><div class="orb blue"></div><div class="card-title">Republic</div><div class="card-sub">Jedi Order & Republic Military</div></div>
+          <div class="faction neutral"><div class="orb white"></div><div class="card-title">Neutral</div><div class="card-sub">Freeblades & Independents</div></div>
+        </div>
+        <div class="label" style="margin-top:20px">Tier I — Starter Class (Levels 1–6)</div>
+        <div class="label" style="color:var(--gold)">⚡ Force-Sensitive</div>
+        <div class="class-card selected"><h3>Sith Initiate</h3><p class="note">A Sith student mastering the basics of the dark side.</p><div class="card-sub">HD: d8 · Force-sensitive · Prestige at Lv6</div></div>
+        <div class="class-card purple"><h3>Inquisitorial Novice</h3><p class="note">A Force-sensitive recruit of the Inquisitorius.</p><div class="card-sub">HD: d8 · Force-sensitive · Prestige at Lv6</div></div>
+        <div class="label">🪖 Non-Force-Sensitive</div>
+        <div class="class-card blue"><h3>Agent Aspirant</h3><p class="note">A spy-in-training learning deception and infiltration.</p><div class="card-sub">HD: d6 · Non-Force · Prestige at Lv6</div></div>
+        <div class="class-card blue"><h3>Flight Cadet</h3><p class="note">A rookie pilot learning to fly Imperial starfighters.</p><div class="card-sub">HD: d8 · Non-Force · Prestige at Lv6</div></div>
+        <div class="class-card yellow"><h3>Tech Corps Initiate</h3><p class="note">A promising engineer in the Imperial Military.</p></div>
+        <div class="panel" style="margin-top:16px"><div class="label">Progression Table</div><table class="table"><tr><th>LVL</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr><tr><td>BAB</td><td>0</td><td>1</td><td>2</td><td>3</td><td>3</td><td>4</td></tr><tr><td>FORT</td><td>+1</td><td>+1</td><td>+2</td><td>+2</td><td>+3</td><td>+3</td></tr><tr><td>REF</td><td>+1</td><td>+1</td><td>+2</td><td>+2</td><td>+2</td><td>+3</td></tr><tr><td>WILL</td><td>+2</td><td>+2</td><td>+2</td><td>+3</td><td>+3</td><td>+4</td></tr></table><span class="chip selected">Eligible: Advance to Tier II</span></div>
+      </div>`;
+    } else if(charStep===6){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Ability Scores</h2><p class="note">Set your base stats. Racial modifiers apply automatically.</p>
+        <div class="grid3"><button class="btn primary">Manual</button><button class="btn ghost">Point Buy</button><button class="btn ghost">Std Array</button></div>
+        <div class="statgrid" style="margin-top:18px">${["STR","DEX","CON","INT","WIS","CHA"].map(a=>`<div class="statbox"><div class="name">${a}</div><div class="row" style="justify-content:center"><button class="btn ghost small">-</button><div class="value">10</div><button class="btn ghost small">+</button></div><div class="mod">${a==="INT"?'-2 racial → 8<br><span style="color:#ff666b">-1</span>':'+0'}</div></div>`).join('')}</div>
+        <p class="note" style="margin:18px 0">Base score shown in white. Racial adjustment and final score shown below each stat.</p>
+        <div class="mods"><h2 class="gold-heading" style="font-size:22px">Auto-Calculated Preview</h2><div class="preview-grid">${[["Max HP","10"],["BAB","+1"],["Reflex","13"],["Fortitude","14"],["Will","12"],["Dmg Thr.","14"],["Melee","+1"],["Ranged","+1"]].map(x=>`<div class="mini-stat"><label>${x[0]}</label><strong>${x[1]}</strong></div>`).join('')}</div></div>
+      </div>`;
+    } else if(charStep===7){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading" style="color:var(--purple)">Force Powers</h2>
+        <div class="resource-card"><div class="label" style="color:var(--purple)">↯ Force Points</div><span class="big-num">2</span><span class="muted"> / 2 max</span><p class="note">FP Max = WIS mod + Level / 2 + class FP bonus</p></div>
+        <div class="grid2"><button class="btn danger">Tier I<br><span class="muted">Access ✓</span></button><button class="btn ghost">Tier II<br><span class="muted">Requires Apprentice</span></button></div>
+        <div class="field"><label class="label">Power Library</label><input placeholder="Search powers..."></div><div class="pill-row"><span class="chip selected">All</span><span class="chip">Tier 1</span><span class="chip">Tier 2</span></div>
+        ${["Force Strike|Channel the Force into a melee strike. Deals +1d6 force damage.","Force Push|Unleash a burst of Force energy. Push target up to 3 squares, 1d6 damage.","Force Choke|Crush the target with invisible pressure."].map(txt=>{let [n,d]=txt.split('|');return `<div class="library-card"><div><h3>${n} <span class="badge bad">T1</span></h3><p>${d}</p></div><button class="plus">+</button></div>`}).join('')}
+      </div>`;
+    } else if(charStep===8){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading" style="color:#ff777d">Sith Techniques <span class="muted" style="float:right;font-size:18px">0 / ∞ known</span></h2><p class="note">Techniques are combat methods, forms, and upgrades.</p>
+        <div class="field"><label class="label">Technique Library</label><input placeholder="Search techniques..."></div><div class="pill-row">${["All","Movement","Combat","Endurance","Defense","Ranged","Utility","Presence"].map((x,i)=>`<span class="chip ${i===0?'selected':''}">${x}</span>`).join('')}</div>
+        ${["Rapid Assault|Movement|After moving 2+ squares, first attack deals +1d6 bonus damage.","Momentum Strike|Movement|When you drop an enemy to 0 HP, move up to 2 squares free.","Blade Vortex|Combat|Strike in a sweeping arc against adjacent foes."].map(txt=>{let [n,t,d]=txt.split('|');return `<div class="library-card"><div><h3>${n} <span class="badge good">${t}</span> <span class="badge">Upgradeable</span></h3><p>${d}</p></div><button class="plus">+</button></div>`}).join('')}
+      </div>`;
+    } else if(charStep===9){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading" style="color:#ff777d">Sith Talents <span class="muted" style="float:right;font-size:18px">0 known</span></h2><p class="note">Talents define your class identity and path. Talents are separate from Techniques.</p>
+        <div class="panel" style="text-align:center;margin-top:24px"><p class="note" style="font-size:19px">Select a Bladesworn path to unlock path-specific talents.</p></div>
+        <p class="note">This step is optional — you can skip it and fill it in later.</p>
+      </div>`;
+    } else if(charStep===10){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Equipment</h2><p class="note">Add your weapons, armor, and gear. Starting credits are 1,000.</p>
+        <button class="btn full">＋ Add Class Starter Equipment</button>
+        <div class="field"><label class="label" style="color:#ff777d">⚔ Weapons</label><div class="row"><input placeholder="e.g. Blaster Pistol (3d6), Lightsaber"><button class="btn danger icon">+</button></div></div>
+        <div class="field"><label class="label" style="color:var(--cyan)">⬡ Armor</label><div class="row"><input placeholder="e.g. Battle Armor (+6 REF)..."><button class="btn blue icon">+</button></div></div>
+        <div class="field"><label class="label">▧ Other Gear</label><div class="row"><input placeholder="e.g. Medpac, Comlink, Datapad..."><button class="btn ghost icon">+</button></div></div>
+        <div class="field"><label class="label">Starting Credits</label><input value="1000"></div>
+      </div>`;
+    } else if(charStep===11){
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Background & Notes</h2><p class="note">Flesh out your character's story, languages, and final notes.</p>
+        <div class="field"><label class="label">Backstory</label><textarea placeholder="Describe your character's history, motivations, secrets, and what drives them..."></textarea><p class="note">The AI Game Master will use this to personalize your adventure.</p></div>
+        <div class="field"><label class="label">Languages</label><div class="row"><input placeholder="Add language..."><button class="btn blue icon">+</button></div></div>
+        <div class="pill-row">${["Basic","Huttese","Binary","Bocce","Shyriiwook","Rodese","Twi'leki","Mandalorian","Old Galactic Standard","Sith"].map(x=>`<span class="chip">＋ ${x}</span>`).join('')}</div>
+        <div class="field"><label class="label">Destiny Points</label><div class="leveler"><button class="btn ghost icon">-</button><span class="num">1</span><button class="btn ghost icon">+</button></div></div>
+        <div class="field"><label class="label">Additional Notes</label><textarea placeholder="Any extra notes about relationships, goals, secrets, house rules..."></textarea></div>
+      </div>`;
+    } else {
+      c.innerHTML=`
+      <div class="panel gold"><h2 class="gold-heading">Review Character</h2><div class="char-card selected"><div class="avatar">⚔️</div><div><div class="card-title">Cin'Bedil</div><div class="card-sub">Lvl 1 · Twi'lek Sith Initiate · Empire · Old Republic</div></div></div><p class="note" style="margin-top:18px">This completes the test character creation flow. Save will return you to the dashboard for now.</p><button class="btn primary full" onclick="showScreen('dashboard')">Save Character</button></div>`;
+    }
+  }
+  function nextCharStep(){ if(charStep<12){charStep++;renderCharStep();window.scrollTo(0,0)}else{showScreen('dashboard')} }
+  function prevCharStep(){ if(charStep>1){charStep--;renderCharStep();window.scrollTo(0,0)}else{showScreen('dashboard')} }
+
+  function toggleScene(){
+    sceneOpen=!sceneOpen;
+    document.getElementById('sceneImage').style.display=sceneOpen?'block':'none';
+    document.getElementById('sceneChevron').textContent=sceneOpen?'⌃':'⌄';
+  }
+  function toggleSound(){ alert('Soundtrack controls will live here later. Placeholder only.'); }
+  function setMode(m){
+    mode=m;
+    document.getElementById('inCharTab').classList.toggle('active',m==='in');
+    document.getElementById('outCharTab').classList.toggle('active',m==='out');
+    document.getElementById('inputTitle').innerHTML = m==='in' ? '⚔ In Character <span class="muted">— story, actions, dialogue</span>' : '▢ Out of Character <span class="muted">— questions, rules, GM help</span>';
+    document.getElementById('storyInput').placeholder = m==='in' ? 'What do you do? Describe your action...' : 'Ask the GM a question, clarify rules, or request a recap...';
+  }
+  function mockSend(){
+    const input=document.getElementById('storyInput');
+    if(!input.value.trim()) return;
+    const text=input.value.trim();
+    const story=document.getElementById('storyText');
+    if(mode==='in'){
+      story.innerHTML += `<br><br><span style="color:var(--gold)">Cin'Bedil:</span> ${escapeHtml(text)}<br><br>The GM placeholder notes your action. In the real build, this will call the AI GM, update memory, create consequences, and optionally refresh quests, bonds, inventory, or scene art.`;
+    } else {
+      story.innerHTML += `<br><br><span style="color:var(--cyan)">OOC Question:</span> ${escapeHtml(text)}<br><br><span class="muted">GM Placeholder:</span> Out-of-character mode will answer rules questions or summarize without advancing the story unless you ask it to.`;
+    }
+    input.value='';
+  }
+  function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+
+  function toggleDrawer(open){
+    document.getElementById('drawer').classList.toggle('open',open);
+    document.getElementById('shade').classList.toggle('open',open);
+  }
+  function navTo(name){
+    toggleDrawer(false);
+    showScreen('campaign');
+    document.getElementById('campaignSectionLabel').textContent=name;
+    if(name==='Story'){
+      document.getElementById('storyView').style.display='block';
+      document.getElementById('campaignPlaceholder').style.display='none';
+    } else {
+      document.getElementById('storyView').style.display='none';
+      document.getElementById('campaignPlaceholder').style.display='block';
+      document.getElementById('placeholderTitle').textContent=name;
+      const descriptions = {
+        Quests:'Quest cards, active objectives, completed missions, and AI-updated task logs will appear here.',
+        Map:'Galaxy map, discovered locations, route notes, and travel hooks will live here.',
+        Ship:'Ship stats, crew roles, cargo, upgrades, travel status, and repairs.',
+        Progression:'Level-ups, class paths, Force advancement, techniques, talents, and XP milestones.',
+        Inventory:'Weapons, armor, gear, consumables, credits, and equipped items.',
+        Shop:'Merchants, black market, item purchases, sell/trade, and shop inventory.',
+        Party:'Companions, recruits, nameless followers, and party roles.',
+        Bonds:'Influence tracker, relationship tiers, loyalty, rivalries, and companion arcs.',
+        Journal:'Session recaps, lore discoveries, personal notes, and GM memory summaries.',
+        Campaign:'Campaign settings, AI behavior, image/audio controls, save/export, and rules options.'
+      };
+      document.getElementById('placeholderText').textContent=descriptions[name]||'Placeholder section.';
+    }
+  }
+
+  function sheetTab(name, el){
+    document.querySelectorAll('.sheet-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('sheetStats').style.display=name==='stats'?'block':'none';
+    document.getElementById('sheetSkills').style.display=name==='skills'?'block':'none';
+    document.getElementById('sheetOther').style.display=(name!=='stats'&&name!=='skills')?'block':'none';
+    if(name!=='stats'&&name!=='skills'){
+      document.getElementById('sheetOtherTitle').textContent=name;
+    }
+  }
+  function renderSkills(){
+    document.getElementById('skillList').innerHTML = skills.map(([n,v,on])=>`
+      <div class="skill-row"><div class="check ${on?'on':''}"></div><div class="skill-name">${n}</div><div class="skill-val">${v}</div><button class="skill-detail">▦</button></div>
+    `).join('');
+  }
+  renderSkills();
+  renderCharStep();
+</script>
+</body>
+</html>
