@@ -1,9 +1,3 @@
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 function safeJsonParse(text) {
   try {
     return JSON.parse(text);
@@ -14,6 +8,23 @@ function safeJsonParse(text) {
     }
     return null;
   }
+}
+
+function extractOutputText(responseJson) {
+  if (responseJson.output_text) return responseJson.output_text;
+
+  const out = responseJson.output || [];
+  const chunks = [];
+
+  for (const item of out) {
+    const content = item.content || [];
+    for (const c of content) {
+      if (typeof c.text === "string") chunks.push(c.text);
+      if (typeof c.output_text === "string") chunks.push(c.output_text);
+    }
+  }
+
+  return chunks.join("\n").trim();
 }
 
 function fallbackPayload(text) {
@@ -29,15 +40,23 @@ function fallbackPayload(text) {
   };
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  res.setHeader("Content-Type", "application/json");
+
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Use POST." });
+    res.status(405).json({
+      error: "Use POST.",
+      ok: false
+    });
     return;
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
     res.status(500).json({
-      error: "OPENAI_API_KEY is missing in Vercel Environment Variables."
+      error: "OPENAI_API_KEY is missing in Vercel Environment Variables.",
+      ok: false
     });
     return;
   }
@@ -48,7 +67,7 @@ export default async function handler(req, res) {
     const instructions = `
 You are the AI GM for a Star Wars Old Republic tabletop RPG app.
 
-You must return ONLY valid JSON. No markdown. No commentary outside JSON.
+Return ONLY valid JSON. No markdown. No commentary outside JSON.
 
 Tone:
 - Cinematic Star Wars Old Republic.
@@ -85,25 +104,46 @@ Required JSON shape:
       currentCampaignState: state
     });
 
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-5.2",
-      instructions,
-      input,
-      max_output_tokens: 1400
+    const apiResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-5.2",
+        instructions,
+        input,
+        max_output_tokens: 1400
+      })
     });
 
-    const text = response.output_text || "";
-    const parsed = safeJsonParse(text) || fallbackPayload(text);
+    const raw = await apiResponse.text();
+
+    if (!apiResponse.ok) {
+      res.status(apiResponse.status).json({
+        ok: false,
+        error: `OpenAI API error ${apiResponse.status}`,
+        details: raw.slice(0, 1800)
+      });
+      return;
+    }
+
+    const openaiJson = safeJsonParse(raw) || {};
+    const outputText = extractOutputText(openaiJson);
+    const structured = safeJsonParse(outputText) || fallbackPayload(outputText);
 
     res.status(200).json({
-      structured: parsed,
-      raw: text,
-      responseId: response.id || null
+      ok: true,
+      structured,
+      raw: outputText,
+      responseId: openaiJson.id || null
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({
-      error: error?.message || "AI GM request failed."
+      ok: false,
+      error: error && error.message ? error.message : "AI GM request failed.",
+      details: String(error && error.stack ? error.stack : error)
     });
   }
-}
+};
