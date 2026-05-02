@@ -1,0 +1,9 @@
+{
+  "name": "star-wars-chronicles-ai-gm",
+  "version": "1.8.7",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openai": "^6.0.0"
+  }
+}
