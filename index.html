@@ -2797,6 +2797,14 @@
   background:rgba(255,197,27,.07);
 }
 
+
+/* --- Bottom IC/OOC Chat Tabs v1.8.8.2 --- */
+.story-bottom-chat-tabs{position:sticky;bottom:0;z-index:50;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 8px;background:linear-gradient(180deg,rgba(2,6,13,0),rgba(2,6,13,.96) 18%,rgba(2,6,13,.98));backdrop-filter:blur(6px)}
+.story-bottom-chat-tabs button{border:1px solid rgba(255,255,255,.10);background:#121826;color:#cfd6e6;border-radius:14px;padding:12px 10px;font-weight:950}
+.story-bottom-chat-tabs button.active{border-color:rgba(255,197,27,.42);background:rgba(255,197,27,.12);color:var(--gold)}
+.story-chat-mode-status{border:1px solid rgba(255,197,27,.20);background:rgba(255,197,27,.06);color:#fff1c5;border-radius:999px;padding:7px 10px;margin:8px 0;font-size:12px;font-weight:950;text-align:center}
+.story-chat-mode-status.ooc{border-color:rgba(66,200,255,.30);background:rgba(66,200,255,.08);color:#b9ecff}
+
 </style>
 </head>
 <body>
@@ -8851,7 +8859,7 @@ function swcShowVersionBadge(){
   let b=document.createElement('div');
   b.id='swcVersionBadge';
   b.className='version-debug-badge';
-  b.textContent='v1.8.7.3 AI';
+  b.textContent='v1.8.8.2 AI';
   document.body.appendChild(b);
 }
 function swcEnsureAiHarnessState(){
@@ -9100,6 +9108,65 @@ function swcInjectStoryLiveStatus(){
 }
 setInterval(swcInjectStoryLiveStatus,1000);
 document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectStoryLiveStatus,500));
+
+
+/* --- Bottom IC/OOC Chat Tabs + No Options v1.8.8.2 --- */
+window.SWC_BUILD_VERSION='v1.8.8.2-no-options-bottom-tabs';
+function swcStoryModeLabel(){
+  let isOut=(typeof mode!=='undefined'&&mode==='out');
+  return isOut?'Out of Character — questions, rules, planning':'In Character — story, actions, dialogue';
+}
+function swcSetStoryChatMode(nextMode){
+  try{ if(typeof setMode==='function') setMode(nextMode); else { mode=nextMode; renderGameChat(); } }catch(e){ try{mode=nextMode;renderGameChat()}catch(_){} }
+  setTimeout(swcInjectBottomStoryTabs,80);
+}
+function swcInjectBottomStoryTabs(){
+  try{
+    let label=document.getElementById('campaignSectionLabel');
+    if(!label||label.textContent.trim().toLowerCase()!=='story')return;
+    document.getElementById('storyBottomChatTabs')?.remove();
+    document.getElementById('storyChatModeStatus')?.remove();
+    let input=document.getElementById('storyInput');
+    if(!input)return;
+    let inputWrap=input.closest('.chat-input-row')||input.parentElement;
+    if(!inputWrap)return;
+    let isOut=(typeof mode!=='undefined'&&mode==='out');
+    let status=document.createElement('div');
+    status.id='storyChatModeStatus';
+    status.className='story-chat-mode-status '+(isOut?'ooc':'');
+    status.textContent=swcStoryModeLabel();
+    inputWrap.insertAdjacentElement('beforebegin',status);
+    inputWrap.insertAdjacentHTML('afterend',`<div id="storyBottomChatTabs" class="story-bottom-chat-tabs">
+      <button class="${!isOut?'active':''}" onclick="swcSetStoryChatMode('in')">⚔ In Character</button>
+      <button class="${isOut?'active':''}" onclick="swcSetStoryChatMode('out')">💬 Out of Character</button>
+    </div>`);
+  }catch(e){console.warn('Bottom tabs failed',e)}
+}
+setInterval(swcInjectBottomStoryTabs,900);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectBottomStoryTabs,500));
+if(typeof formatAiGmForStory==='function'){
+  formatAiGmForStory=function(payload){
+    let p=(typeof normalizeAiGmPayload==='function')?normalizeAiGmPayload(payload):payload;
+    let parts=[];
+    if(p.narration)parts.push(p.narration);
+    (p.dialogue||[]).forEach(d=>{ if(d&&d.speaker&&d.text)parts.push(`${d.speaker}: "${d.text}"`); });
+    (p.rollRequests||[]).forEach(r=>{
+      let label=r.skill||r.save||r.attack||'Check';
+      let dc=r.dc?` DC ${r.dc}`:'';
+      let reason=r.reason?` — ${r.reason}`:'';
+      parts.push(`[Action] Roll ${label}${dc}${reason}`);
+    });
+    if(p.actions&&p.actions.length){
+      parts.push('Possible approaches:');
+      p.actions.forEach((a,i)=>parts.push(`${i+1}. ${a}`));
+    }
+    if(p.combatTrigger)parts.push(`[Action] Combat trigger prepared: ${p.combatTrigger.reason||p.combatTrigger.title||'Story combat may begin.'}`);
+    if(p.imagePrompt)parts.push(`[Action] Scene image prompt prepared.`);
+    return parts.join('\n\n');
+  }
+}
+function swcUpdateVersionBadge1882(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.2 AI'}
+setInterval(swcUpdateVersionBadge1882,1000);
 
 applyClassDefaults();renderAll();renderCharStep();
 </script>
