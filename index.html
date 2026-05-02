@@ -2774,6 +2774,29 @@
 .ai-visible-status{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:12px;padding:10px;margin-top:10px;color:#d8e0ef;white-space:pre-wrap;max-height:220px;overflow:auto;font-size:13px}
 @media(max-width:720px){.ai-visible-buttons{grid-template-columns:1fr}}
 
+
+/* --- Live AI Story Send Fix v1.8.7.3 --- */
+.live-ai-story-status{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin:8px 0 2px;
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.04em;
+  color:#9ef0b8;
+  border:1px solid rgba(34,197,94,.28);
+  background:rgba(34,197,94,.08);
+  border-radius:999px;
+  padding:6px 9px;
+}
+.live-ai-story-status.off{
+  color:#ffc51b;
+  border-color:rgba(255,197,27,.28);
+  background:rgba(255,197,27,.07);
+}
+
 </style>
 </head>
 <body>
@@ -8822,13 +8845,13 @@ function setCampaignTab(tab){
 
 
 /* --- Visible AI Harness Emergency Patch v1.8.7.1 JS --- */
-window.SWC_BUILD_VERSION='v1.8.7.1-ai-visible';
+window.SWC_BUILD_VERSION='v1.8.7.3-live-ai';
 function swcShowVersionBadge(){
   if(document.getElementById('swcVersionBadge'))return;
   let b=document.createElement('div');
   b.id='swcVersionBadge';
   b.className='version-debug-badge';
-  b.textContent='v1.8.7.1 AI';
+  b.textContent='v1.8.7.3 AI';
   document.body.appendChild(b);
 }
 function swcEnsureAiHarnessState(){
@@ -8943,6 +8966,140 @@ function swcCopyAiState(){
     alert('Campaign state copied.');
   }catch(e){alert('Could not copy state.')}
 }
+
+
+/* --- Live AI Story Send Fix v1.8.7.3 JS --- */
+window.SWC_BUILD_VERSION='v1.8.7.3-live-ai-send';
+function swcLiveAiEnabled(){
+  try{
+    swcEnsureAiHarnessState();
+    return !!(window.campaignSettings && window.campaignSettings.aiTest && window.campaignSettings.aiTest.enabled);
+  }catch(e){
+    return false;
+  }
+}
+function swcAiEndpoint(){
+  try{
+    swcEnsureAiHarnessState();
+    return (window.campaignSettings.aiTest && window.campaignSettings.aiTest.endpoint) || '/api/gm';
+  }catch(e){
+    return '/api/gm';
+  }
+}
+async function swcCallAiForStory(playerMessage, chatMode='in'){
+  let endpoint=swcAiEndpoint();
+  let state=(typeof buildAiGmState==='function')?buildAiGmState():{character:window.char||{},note:'fallback state'};
+  let res=await fetch(endpoint,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({playerMessage,chatMode,state,requestedFormat:'structured-json',timestamp:Date.now()})
+  });
+  let text=await res.text();
+  let parsed;
+  try{parsed=JSON.parse(text)}catch(e){parsed={narration:text,raw:text}}
+  if(!res.ok){
+    throw new Error(parsed.error || parsed.message || `HTTP ${res.status}: ${text}`);
+  }
+  let payload=(typeof normalizeAiGmPayload==='function')?normalizeAiGmPayload(parsed.structured||parsed,text):(parsed.structured||parsed);
+  swcEnsureAiHarnessState();
+  window.campaignSettings.aiTest.lastStatus='Live AI response received at '+new Date().toLocaleString();
+  window.campaignSettings.aiTest.lastRaw=JSON.stringify(parsed,null,2);
+  window.campaignSettings.aiTest.lastStructured=payload;
+  swcSaveSettingsSafe();
+  return payload;
+}
+async function sendGameMessage(){
+  ensureCampaignChat();
+  if(typeof ensureCampaignSettings==='function')ensureCampaignSettings();
+  if(typeof swcEnsureAiHarnessState==='function')swcEnsureAiHarnessState();
+
+  let input=document.getElementById('storyInput');
+  let text=(input && input.value ? input.value.trim() : '');
+  if(!text)return;
+
+  let chatMode=mode==='out'?'out':'in';
+  window.campaignChat[chatMode].push({
+    id:'m_'+Date.now()+'_'+Math.random().toString(16).slice(2),
+    mode:chatMode,
+    role:'player',
+    text,
+    time:Date.now()
+  });
+
+  if(input)input.value='';
+  saveCampaignChat();
+  renderGameChat();
+
+  if(chatMode==='in' && swcLiveAiEnabled()){
+    let thinkingId='gm_ai_thinking_'+Date.now()+'_'+Math.random().toString(16).slice(2);
+    window.campaignChat.in.push({
+      id:thinkingId,
+      mode:'in',
+      role:'gm',
+      text:'[Action] Live AI GM is thinking...',
+      time:Date.now()+1
+    });
+    saveCampaignChat();
+    renderGameChat();
+
+    try{
+      let payload=await swcCallAiForStory(text,'in');
+      let msg=window.campaignChat.in.find(m=>m.id===thinkingId);
+      if(msg){
+        msg.text=(typeof formatAiGmForStory==='function')?formatAiGmForStory(payload):(payload.narration||JSON.stringify(payload,null,2));
+        msg.time=Date.now();
+      }
+      saveCampaignChat();
+      renderGameChat();
+    }catch(e){
+      let msg=window.campaignChat.in.find(m=>m.id===thinkingId);
+      if(msg){
+        msg.text=`[Action] Live AI GM error: ${e.message||e}\n\nOOC: The backend route was reached, but the AI call failed. Check /api/health, OPENAI_MODEL, billing/credits, and Vercel deployment.`;
+        msg.time=Date.now();
+      }
+      saveCampaignChat();
+      renderGameChat();
+    }
+    return;
+  }
+
+  // Fallback placeholder only when Live AI is OFF or OOC mode is selected.
+  window.campaignChat[chatMode].push({
+    id:'gm_'+Date.now()+'_'+Math.random().toString(16).slice(2),
+    mode:chatMode,
+    role:'gm',
+    text:gmPlaceholderReply(text,chatMode),
+    time:Date.now()+1
+  });
+  window.campaignChat.sharedNotes.push({mode:chatMode,text,time:Date.now()});
+  saveCampaignChat();
+  renderGameChat();
+}
+function swcInjectStoryLiveStatus(){
+  try{
+    let label=document.getElementById('campaignSectionLabel');
+    let onStory=label && label.textContent.trim().toLowerCase()==='story';
+    if(!onStory)return;
+    let input=document.getElementById('storyInput');
+    if(!input)return;
+    let existing=document.getElementById('liveAiStoryStatus');
+    let live=swcLiveAiEnabled();
+    let text=live?'LIVE AI GM: ON':'LIVE AI GM: OFF — Story uses placeholder GM';
+    if(existing){
+      existing.textContent=text;
+      existing.classList.toggle('off',!live);
+      return;
+    }
+    let div=document.createElement('div');
+    div.id='liveAiStoryStatus';
+    div.className='live-ai-story-status'+(live?'':' off');
+    div.textContent=text;
+    let compose=input.closest('.composer')||input.parentElement;
+    if(compose)compose.parentElement.insertBefore(div,compose);
+  }catch(e){}
+}
+setInterval(swcInjectStoryLiveStatus,1000);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectStoryLiveStatus,500));
 
 applyClassDefaults();renderAll();renderCharStep();
 </script>
