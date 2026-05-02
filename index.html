@@ -2805,6 +2805,9 @@
 .story-chat-mode-status{border:1px solid rgba(255,197,27,.20);background:rgba(255,197,27,.06);color:#fff1c5;border-radius:999px;padding:7px 10px;margin:8px 0;font-size:12px;font-weight:950;text-align:center}
 .story-chat-mode-status.ooc{border-color:rgba(66,200,255,.30);background:rgba(66,200,255,.08);color:#b9ecff}
 
+/* --- OOC Live AI v1.8.8.3 --- */
+.ooc-live-note{border:1px solid rgba(66,200,255,.25);background:rgba(66,200,255,.07);color:#b9ecff;border-radius:12px;padding:8px 10px;margin:8px 0;font-size:12px;line-height:1.35}
+
 </style>
 </head>
 <body>
@@ -8859,7 +8862,7 @@ function swcShowVersionBadge(){
   let b=document.createElement('div');
   b.id='swcVersionBadge';
   b.className='version-debug-badge';
-  b.textContent='v1.8.8.2 AI';
+  b.textContent='v1.8.8.3 AI';
   document.body.appendChild(b);
 }
 function swcEnsureAiHarnessState(){
@@ -9165,8 +9168,77 @@ if(typeof formatAiGmForStory==='function'){
     return parts.join('\n\n');
   }
 }
-function swcUpdateVersionBadge1882(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.2 AI'}
+function swcUpdateVersionBadge1882(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.3 AI'}
 setInterval(swcUpdateVersionBadge1882,1000);
+
+
+/* --- OOC Live AI + Chat Mode Fix v1.8.8.3 --- */
+window.SWC_BUILD_VERSION='v1.8.8.3-ooc-live-ai';
+function swcPlainOocAiText(payload){
+  let p=(typeof normalizeAiGmPayload==='function')?normalizeAiGmPayload(payload):payload;
+  let parts=[];
+  if(p.narration)parts.push(p.narration);
+  if(p.rollRequests&&p.rollRequests.length){
+    p.rollRequests.forEach(r=>{
+      let label=r.skill||r.save||r.attack||'Check';
+      let dc=r.dc?` DC ${r.dc}`:'';
+      let reason=r.reason?` — ${r.reason}`:'';
+      parts.push(`Suggested roll: ${label}${dc}${reason}`);
+    });
+  }
+  return parts.join('\n\n') || 'OOC noted.';
+}
+async function sendGameMessage(){
+  try{
+    ensureCampaignChat(); ensureCampaignSettings();
+    if(typeof ensureAiGmTest==='function')ensureAiGmTest();
+    let input=document.getElementById('storyInput');
+    let text=input?.value?.trim()||'';
+    if(!text)return;
+    let chatMode=(typeof mode!=='undefined'&&mode==='out')?'out':'in';
+    window.campaignChat[chatMode].push({id:'m_'+Date.now()+'_'+Math.random().toString(16).slice(2),mode:chatMode,role:'player',text,time:Date.now()});
+    input.value='';
+    saveCampaignChat();
+    renderGameChat();
+
+    let liveOn=!!(window.campaignSettings&&window.campaignSettings.aiTest&&window.campaignSettings.aiTest.enabled);
+    if(liveOn){
+      let thinkingId='gm_thinking_'+Date.now();
+      window.campaignChat[chatMode].push({id:thinkingId,mode:chatMode,role:'gm',text:chatMode==='out'?'OOC: AI GM is checking that...':'[Action] AI GM is thinking...',time:Date.now()+1});
+      saveCampaignChat(); renderGameChat();
+      try{
+        let payload=await callAiGmEndpoint(text,chatMode);
+        let msg=window.campaignChat[chatMode].find(m=>m.id===thinkingId);
+        if(msg){
+          msg.text=chatMode==='out'?swcPlainOocAiText(payload):formatAiGmForStory(payload);
+          msg.time=Date.now();
+        }
+        if(chatMode==='out'){
+          window.campaignChat.sharedNotes=window.campaignChat.sharedNotes||[];
+          window.campaignChat.sharedNotes.push({mode:chatMode,text,gmReply:msg?.text||'',time:Date.now()});
+        }
+        saveCampaignChat(); renderGameChat();
+        if(typeof swcInjectBottomStoryTabs==='function')setTimeout(swcInjectBottomStoryTabs,80);
+      }catch(e){
+        let msg=window.campaignChat[chatMode].find(m=>m.id===thinkingId);
+        if(msg){msg.text=`AI GM error: ${e.message||e}`;msg.time=Date.now();}
+        saveCampaignChat(); renderGameChat();
+      }
+      return;
+    }
+
+    let reply=chatMode==='out'
+      ? `OOC noted. This stays out of the story log, but the GM can use it as context.\n\nPlaceholder GM answer: I understand you asked/clarified — “${text}”.`
+      : gmPlaceholderReply(text,chatMode);
+    window.campaignChat[chatMode].push({id:'gm_'+Date.now()+'_'+Math.random().toString(16).slice(2),mode:chatMode,role:'gm',text:reply,time:Date.now()+1});
+    window.campaignChat.sharedNotes=window.campaignChat.sharedNotes||[];
+    window.campaignChat.sharedNotes.push({mode:chatMode,text,time:Date.now()});
+    saveCampaignChat(); renderGameChat();
+    if(typeof swcInjectBottomStoryTabs==='function')setTimeout(swcInjectBottomStoryTabs,80);
+  }catch(err){alert('Send failed: '+(err.message||err));}
+}
+function swcUpdateVersionBadge1883(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.3 AI'}
+setInterval(swcUpdateVersionBadge1883,1000);
 
 applyClassDefaults();renderAll();renderCharStep();
 </script>
