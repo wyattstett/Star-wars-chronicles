@@ -2759,6 +2759,21 @@
   }
 }
 
+
+/* --- Visible AI Harness Emergency Patch v1.8.7.1 --- */
+.version-debug-badge{position:fixed;right:8px;bottom:8px;z-index:99999;border:1px solid rgba(66,200,255,.35);background:rgba(5,10,18,.90);color:#42c8ff;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:950;letter-spacing:.03em;pointer-events:none}
+.ai-visible-harness{border:1px solid rgba(66,200,255,.35);background:linear-gradient(180deg,rgba(66,200,255,.10),rgba(8,12,22,.88));border-radius:18px;padding:14px;margin:0 0 14px;box-shadow:0 0 22px rgba(66,200,255,.10)}
+.ai-visible-harness h3{margin:0 0 8px;color:#b9ecff;font-size:22px}
+.ai-visible-harness p{margin:8px 0;color:#d8e0ef;line-height:1.45}
+.ai-visible-harness textarea,.ai-visible-harness input{width:100%;border:1px solid rgba(255,255,255,.12);background:#121826;color:#fff;border-radius:12px;padding:11px;margin-top:8px}
+.ai-visible-harness textarea{min-height:110px}
+.ai-visible-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ai-visible-buttons button{border:1px solid rgba(255,197,27,.35);background:rgba(255,197,27,.11);color:var(--gold);border-radius:12px;padding:11px 10px;font-weight:950}
+.ai-visible-buttons button.blue{border-color:rgba(66,200,255,.34);background:rgba(66,200,255,.09);color:#42c8ff}
+.ai-visible-buttons button.green{border-color:rgba(34,197,94,.30);background:rgba(34,197,94,.10);color:#9ef0b8}
+.ai-visible-status{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:12px;padding:10px;margin-top:10px;color:#d8e0ef;white-space:pre-wrap;max-height:220px;overflow:auto;font-size:13px}
+@media(max-width:720px){.ai-visible-buttons{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -8803,6 +8818,130 @@ function setCampaignTab(tab){
   window.campaignSettings.tab=tab;
   saveCampaignSettings();
   renderCampaignSettings();
+}
+
+
+/* --- Visible AI Harness Emergency Patch v1.8.7.1 JS --- */
+window.SWC_BUILD_VERSION='v1.8.7.1-ai-visible';
+function swcShowVersionBadge(){
+  if(document.getElementById('swcVersionBadge'))return;
+  let b=document.createElement('div');
+  b.id='swcVersionBadge';
+  b.className='version-debug-badge';
+  b.textContent='v1.8.7.1 AI';
+  document.body.appendChild(b);
+}
+function swcEnsureAiHarnessState(){
+  if(!window.campaignSettings)window.campaignSettings={};
+  if(!window.campaignSettings.aiTest){
+    window.campaignSettings.aiTest={
+      enabled:false,manualApproval:true,
+      testPrompt:'I step off the shuttle on Korriban and look toward the Sith Academy.',
+      lastStatus:'Ready. Click Run AI GM Test.',
+      lastRaw:'',lastStructured:null,endpoint:'/api/gm'
+    };
+  }
+  if(!window.campaignSettings.aiTest.endpoint)window.campaignSettings.aiTest.endpoint='/api/gm';
+}
+function swcSaveSettingsSafe(){
+  try{saveCampaignSettings()}catch(e){try{localStorage.setItem('swc_campaign_settings_v1',JSON.stringify(window.campaignSettings))}catch(_){}}
+}
+function swcAiHarnessHtml(){
+  swcEnsureAiHarnessState();
+  let t=window.campaignSettings.aiTest;
+  return `<div class="ai-visible-harness" id="aiHarnessVisible">
+    <h3>AI GM Test Harness</h3>
+    <p><b>Visible test patch active.</b> This confirms the new index.html is deployed. Use this to test your Vercel backend at <code>${esc(t.endpoint)}</code>.</p>
+    <textarea id="aiHarnessPrompt">${esc(t.testPrompt||'')}</textarea>
+    <input id="aiHarnessEndpoint" value="${esc(t.endpoint||'/api/gm')}" placeholder="/api/gm">
+    <div class="ai-visible-buttons">
+      <button class="blue" onclick="swcRunVisibleAiTest()">Run AI GM Test</button>
+      <button class="green" onclick="swcApplyVisibleAiToStory()">Apply Last to Story</button>
+      <button onclick="swcToggleLiveAi()">${t.enabled?'Disable Live AI':'Enable Live AI'}</button>
+      <button onclick="swcCopyAiState()">Copy Campaign State</button>
+    </div>
+    <div class="ai-visible-status" id="aiHarnessStatus">${esc(t.lastStatus||'Ready.')}</div>
+    <div class="ai-visible-status" id="aiHarnessRaw">${esc(t.lastRaw||'No raw output yet.')}</div>
+  </div>`;
+}
+function swcFindAiSettingsInsertionPoint(){
+  let candidates=[...document.querySelectorAll('.campaign-grid,.campaign-board')];
+  for(let el of candidates){if(el.textContent && el.textContent.includes('AI GM settings'))return el;}
+  return document.getElementById('campaignPlaceholder')||null;
+}
+function swcInjectAiHarness(){
+  try{
+    swcShowVersionBadge();
+    let label=document.getElementById('campaignSectionLabel');
+    let onCampaign=label && label.textContent.trim().toLowerCase()==='campaign';
+    if(!onCampaign)return;
+    let bodyText=document.body.textContent||'';
+    let onAiTab=bodyText.includes('AI GM settings') || bodyText.includes('GM STYLE') || bodyText.includes('CUSTOM AI GM INSTRUCTIONS');
+    if(!onAiTab)return;
+    if(document.getElementById('aiHarnessVisible'))return;
+    let target=swcFindAiSettingsInsertionPoint();
+    if(!target)return;
+    target.insertAdjacentHTML('afterbegin',swcAiHarnessHtml());
+  }catch(e){console.warn('AI harness injection failed',e)}
+}
+setInterval(swcInjectAiHarness,1000);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectAiHarness,500));
+async function swcRunVisibleAiTest(){
+  swcEnsureAiHarnessState();
+  let prompt=document.getElementById('aiHarnessPrompt')?.value||'Continue the scene.';
+  let endpoint=document.getElementById('aiHarnessEndpoint')?.value||'/api/gm';
+  window.campaignSettings.aiTest.testPrompt=prompt;
+  window.campaignSettings.aiTest.endpoint=endpoint;
+  window.campaignSettings.aiTest.lastStatus='Calling AI GM...';
+  swcSaveSettingsSafe();
+  let st=document.getElementById('aiHarnessStatus'); if(st)st.textContent='Calling AI GM...';
+  try{
+    let state=(typeof buildAiGmState==='function')?buildAiGmState():{character:window.char||{},note:'fallback state'};
+    let res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerMessage:prompt,chatMode:'in',state})});
+    let text=await res.text();
+    let parsed; try{parsed=JSON.parse(text)}catch(e){parsed={narration:text,raw:text}}
+    if(!res.ok)throw new Error(parsed.error||parsed.message||`HTTP ${res.status}: ${text}`);
+    let payload=(typeof normalizeAiGmPayload==='function')?normalizeAiGmPayload(parsed.structured||parsed,text):(parsed.structured||parsed);
+    window.campaignSettings.aiTest.lastStatus='AI GM response received.';
+    window.campaignSettings.aiTest.lastRaw=JSON.stringify(parsed,null,2);
+    window.campaignSettings.aiTest.lastStructured=payload;
+    swcSaveSettingsSafe();
+    if(st)st.textContent=window.campaignSettings.aiTest.lastStatus;
+    let raw=document.getElementById('aiHarnessRaw'); if(raw)raw.textContent=window.campaignSettings.aiTest.lastRaw;
+  }catch(e){
+    window.campaignSettings.aiTest.lastStatus='AI GM error: '+(e.message||e);
+    window.campaignSettings.aiTest.lastRaw=String(e.stack||e.message||e);
+    swcSaveSettingsSafe();
+    if(st)st.textContent=window.campaignSettings.aiTest.lastStatus;
+    let raw=document.getElementById('aiHarnessRaw'); if(raw)raw.textContent=window.campaignSettings.aiTest.lastRaw;
+  }
+}
+function swcApplyVisibleAiToStory(){
+  swcEnsureAiHarnessState();
+  let payload=window.campaignSettings.aiTest.lastStructured;
+  if(!payload){alert('No AI response to apply yet.');return}
+  try{
+    ensureCampaignChat();
+    let text=(typeof formatAiGmForStory==='function')?formatAiGmForStory(payload):(payload.narration||JSON.stringify(payload,null,2));
+    window.campaignChat.in.push({id:'gm_ai_visible_'+Date.now(),mode:'in',role:'gm',text,time:Date.now()});
+    saveCampaignChat();
+    navTo('Story');
+    renderGameChat();
+  }catch(e){alert('Could not apply to story: '+(e.message||e))}
+}
+function swcToggleLiveAi(){
+  swcEnsureAiHarnessState();
+  window.campaignSettings.aiTest.enabled=!window.campaignSettings.aiTest.enabled;
+  swcSaveSettingsSafe();
+  let el=document.getElementById('aiHarnessVisible');
+  if(el)el.outerHTML=swcAiHarnessHtml();
+}
+function swcCopyAiState(){
+  try{
+    let state=(typeof buildAiGmState==='function')?buildAiGmState():{character:window.char||{}};
+    navigator.clipboard.writeText(JSON.stringify(state,null,2));
+    alert('Campaign state copied.');
+  }catch(e){alert('Could not copy state.')}
 }
 
 applyClassDefaults();renderAll();renderCharStep();
