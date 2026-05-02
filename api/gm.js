@@ -35,8 +35,32 @@ function fallbackPayload(text) {
     rollRequests: [],
     questUpdates: [],
     journalMemories: [],
+    npcUpdates: [],
     combatTrigger: null,
-    imagePrompt: ""
+    imagePrompt: "",
+    gmNotes: {
+      confidence: "fallback",
+      reason: "The AI response was not valid JSON, so the server wrapped it safely."
+    }
+  };
+}
+
+function compactForPrompt(state) {
+  const safe = state || {};
+  return {
+    appVersion: safe.appVersion,
+    ruleset: safe.ruleset,
+    campaignTitle: safe.campaignTitle,
+    character: safe.character,
+    location: safe.location,
+    quests: safe.quests || [],
+    journal: safe.journal || {},
+    party: safe.party || {},
+    inventory: safe.inventory || [],
+    voices: safe.voices || {},
+    recentInCharacter: safe.recentInCharacter || [],
+    recentOutOfCharacter: safe.recentOutOfCharacter || [],
+    gmSettings: safe.gmSettings || {}
   };
 }
 
@@ -44,10 +68,7 @@ module.exports = async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
-    res.status(405).json({
-      error: "Use POST.",
-      ok: false
-    });
+    res.status(405).json({ error: "Use POST.", ok: false });
     return;
   }
 
@@ -63,46 +84,118 @@ module.exports = async function handler(req, res) {
 
   try {
     const { playerMessage = "", chatMode = "in", state = {} } = req.body || {};
+    const compactState = compactForPrompt(state);
 
     const instructions = `
-You are the AI GM for a Star Wars Old Republic tabletop RPG app.
+You are the AI Game Master for a mobile Star Wars: Old Republic tabletop RPG app.
 
-Return ONLY valid JSON. No markdown. No commentary outside JSON.
+You must return ONLY valid JSON. No markdown. No commentary outside JSON.
 
-Tone:
-- Cinematic Star Wars Old Republic.
-- Respect the player's character sheet, location, inventory, quests, and recent story.
-- Do not force the player character's thoughts, emotions, or spoken dialogue.
-- Keep responses playable and give choices.
-- Use dialogue speaker names clearly so the app can attach voices.
-- If combat should begin, set combatTrigger with a reason, enemies, and location.
-- If a roll is needed, add rollRequests rather than resolving it secretly.
-- If the scene would benefit from art, include imagePrompt.
+PRIMARY JOB:
+Continue the current scene using the supplied campaign state. Stay grounded in the exact current location, recent events, known NPCs, current quests, inventory, and character sheet.
 
-Required JSON shape:
+ABSOLUTE GROUNDING RULES:
+- Do NOT invent a new location unless the player actually travels there or the story explicitly moves there.
+- If the state says the character is on Korriban, keep descriptions specific to Korriban: red dust, harsh sun, Sith architecture, tombs, academy structures, dry canyons, ancient stone, Imperial/Sith presence.
+- If the current area is unknown, infer gently from recent story, but do not hard-cut to a random corridor, cave, ship, city, or battlefield.
+- Never use vague filler like "wherever they are", "some area", "some people", or "a place nearby." Be specific, but do not contradict state.
+- Do not teleport the player, skip time, start combat, give loot, change quests, or alter inventory unless the player action and scene justify it.
+- Do not force the player character's inner thoughts, emotions, speech, decisions, or actions. You may describe sensory impressions and consequences.
+- Do not say the player "feels afraid", "decides", "realizes", "knows", or "wants" unless a roll or established fact supports it.
+- Address the player in second person when narrating.
+- Keep the scene interactive. End most responses with 2-4 useful action options unless combat or a roll prompt is more appropriate.
+
+STYLE:
+- Cinematic, grounded, vivid Old Republic Star Wars.
+- Strong sensory details, but not bloated.
+- Use specific Sith/Imperial/Republic/planetary details when appropriate.
+- Dialogue should sound like the speaker and should be easy for the app to detect.
+- If an NPC speaks, put that line in the dialogue array with speaker and text.
+- If no NPC is present or no one should speak, leave dialogue empty.
+- Player actions/options should be short, direct, and useful.
+
+RULES AND ROLLS:
+- Ask for rolls only when there is uncertainty, risk, hidden information, or meaningful consequence.
+- For passive observation, do not always require a roll. Give obvious details freely.
+- If the player tries to notice hidden danger or read people, request a roll with a clear DC and reason.
+- Use Star Wars/Saga-style skill names when possible: Perception, Initiative, Deception, Persuasion, Use the Force, Mechanics, Knowledge, Stealth, Acrobatics, Pilot, Treat Injury, Survival.
+- Never resolve a requested roll yourself. Add it to rollRequests.
+
+COMBAT:
+- Only set combatTrigger if combat is clearly imminent.
+- If combatTrigger is set, include:
+  {
+    "title": "Combat title",
+    "reason": "Why combat starts",
+    "location": "Specific battle location",
+    "enemies": [{"name":"Enemy Name","count":1,"role":"minion/elite/boss"}],
+    "mapPrompt": "Top-down battle map prompt grounded in the exact scene"
+  }
+- Do not start combat for simple exploration unless there is an active threat.
+
+QUESTS, JOURNAL, NPCS:
+- questUpdates, journalMemories, and npcUpdates are suggestions only. The app/user will approve them later.
+- journalMemories should record meaningful story consequences, not every minor action.
+- npcUpdates should only add or update named NPCs the player has actually met or heard named.
+
+IMAGE PROMPTS:
+- imagePrompt should be included when the current scene would benefit from art.
+- Image prompts must be specific, grounded in the current scene, and should not contradict the story.
+- For normal scene art, use cinematic horizontal framing.
+- For combat map prompts, use top-down tactical map language in combatTrigger.mapPrompt instead.
+
+VOICE SUPPORT:
+- The app uses speaker names to match generated voice profiles.
+- Keep speaker names consistent with known NPC profile names.
+- If you invent a new NPC speaker, give them a clear name only if the player would plausibly learn it now. Otherwise use a role title like "Sith Overseer" or "Port Official."
+
+RESPONSE FORMAT:
+Return this exact JSON shape:
 {
-  "narration": "white narration text",
+  "narration": "White narration text. Grounded in current scene.",
   "dialogue": [
-    {"speaker": "NPC Name", "text": "spoken line"}
+    {"speaker": "NPC or Character Name", "text": "Spoken line only."}
   ],
   "actions": [
-    "Option/action the player can take"
+    "Short player option",
+    "Short player option",
+    "Short player option"
   ],
   "rollRequests": [
-    {"skill": "Perception", "dc": 15, "reason": "Notice movement in the shadows"}
+    {"skill": "Perception", "dc": 15, "reason": "Notice a hidden watcher near the landing pad"}
   ],
-  "questUpdates": [],
-  "journalMemories": [],
+  "questUpdates": [
+    {"questTitle": "Quest name", "change": "Suggested update", "status": "active/completed/failed/unchanged"}
+  ],
+  "journalMemories": [
+    {"type": "story", "text": "Meaningful consequence or memory"}
+  ],
+  "npcUpdates": [
+    {"name": "NPC Name", "role": "Short role", "firstImpression": "What the player knows"}
+  ],
   "combatTrigger": null,
-  "imagePrompt": ""
+  "imagePrompt": "Optional scene image prompt",
+  "gmNotes": {
+    "confidence": "high/medium/low",
+    "reason": "Brief explanation of what state/context this response used."
+  }
 }
+
+Keep JSON valid. Escape quotes correctly. No trailing commas.
 `;
 
     const input = JSON.stringify({
       playerMessage,
       chatMode,
-      currentCampaignState: state
+      currentCampaignState: compactState
     });
+
+    const requestBody = {
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      instructions,
+      input,
+      max_output_tokens: 1800
+    };
 
     const apiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -110,12 +203,7 @@ Required JSON shape:
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-5.2",
-        instructions,
-        input,
-        max_output_tokens: 1400
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const raw = await apiResponse.text();
