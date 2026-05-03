@@ -29,7 +29,7 @@ function extractOutputText(responseJson) {
 
 function fallbackPayload(text) {
   return {
-    narration: text || "The GM considers the next moment.",
+    narration: text || "You take a moment to read the scene from where you stand. The GM should describe the immediate area, visible people, exits, notable objects, and anything suspicious enough to warrant a closer look.",
     dialogue: [],
     actions: [],
     rollRequests: [],
@@ -99,7 +99,7 @@ SCENE LOCK RULES:
 - If the recent scene says the player is at a Korriban landing pad, spaceport, shuttle ramp, academy approach, checkpoint, or academy steps, continue there. Do not jump to tombs, corridors, caves, canyons, warehouses, or random interior spaces unless the player moved there.
 - If location.area is vague or unknown, use recentInCharacter as the source of truth.
 - Mention the current scene anchor in the narration within the first two sentences.
-- If the player says "I look around" or "I take in my surroundings", describe what is visible from their current position. Do not change locations.
+- If the player says "I look around", "I check my surroundings", "what do I see?", "can I roll Perception?", or similar, define the current scene clearly from their exact position. Do not change locations. Give obvious details first, then request a roll only for hidden/subtle details.
 - Do not invent "a pair of officers discussing deployment strategies" unless that specifically advances the scene or creates an interactable hook. If you add background NPCs, make them useful and concrete.
 - Never use generic filler like "wherever they are", "the area", "the place", "some people", or "various structures." Name the thing: shuttle ramp, landing pad, checkpoint, academy gates, Sith statues, port official kiosk, dust-caked cargo skids, robed initiates, Imperial sentries.
 
@@ -118,6 +118,18 @@ STYLE:
 - Dialogue should sound like the speaker and should be easy for the app to detect.
 - If an NPC speaks, put that line in the dialogue array with speaker and text.
 - If no NPC is present or no one should speak, leave dialogue empty.
+
+
+IN-CHARACTER GM QUESTIONS / OBSERVATION REQUESTS:
+- If chatMode is "in" and the player asks something like "what do I see?", "what are my surroundings?", "I check my surroundings", "I look around", "do I notice anything?", or "can I roll Perception?", treat it like a player asking the GM for scene clarification.
+- Answer by clearly defining the immediate surroundings from the current position.
+- Give obvious visible/audible/sensory information freely without requiring a roll.
+- Organize the description naturally: immediate area, visible NPCs/creatures, exits/paths, notable objects, atmosphere, and anything suspicious but obvious.
+- If there may be hidden information, include a rollRequest after the basic description, for example Perception DC 15 to spot concealed watchers or subtle clues.
+- Do not replace the current scene with a generic planet description.
+- Do not say "you find nothing" unless the scene truly has no relevant detail. Even quiet scenes should have useful orientation details.
+- Do not give menu-style action options unless the player asks for options.
+- The goal is to help the player picture the scene well enough to choose their own action.
 
 ACTIONS / PLAYER OPTIONS:
 - Do NOT provide action option menus by default.
