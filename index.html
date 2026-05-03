@@ -8862,7 +8862,7 @@ function swcShowVersionBadge(){
   let b=document.createElement('div');
   b.id='swcVersionBadge';
   b.className='version-debug-badge';
-  b.textContent='v1.8.8.3 AI';
+  b.textContent='v1.8.8.4 AI';
   document.body.appendChild(b);
 }
 function swcEnsureAiHarnessState(){
@@ -9168,7 +9168,7 @@ if(typeof formatAiGmForStory==='function'){
     return parts.join('\n\n');
   }
 }
-function swcUpdateVersionBadge1882(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.3 AI'}
+function swcUpdateVersionBadge1882(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.4 AI'}
 setInterval(swcUpdateVersionBadge1882,1000);
 
 
@@ -9237,8 +9237,14 @@ async function sendGameMessage(){
     if(typeof swcInjectBottomStoryTabs==='function')setTimeout(swcInjectBottomStoryTabs,80);
   }catch(err){alert('Send failed: '+(err.message||err));}
 }
-function swcUpdateVersionBadge1883(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.3 AI'}
+function swcUpdateVersionBadge1883(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.4 AI'}
 setInterval(swcUpdateVersionBadge1883,1000);
+
+
+/* --- Observation GM Patch v1.8.8.4 --- */
+window.SWC_BUILD_VERSION='v1.8.8.4-observation-gm';
+function swcUpdateVersionBadge1884(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.4 AI'}
+setInterval(swcUpdateVersionBadge1884,1000);
 
 applyClassDefaults();renderAll();renderCharStep();
 </script>

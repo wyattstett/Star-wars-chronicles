@@ -1,23 +1,11 @@
-# Star Wars Chronicles AI GM Test Harness v1.8.7.2
+# Star Wars Chronicles v1.8.8.4
 
-Upload these files/folders to your GitHub repo:
-
+Replace:
 - index.html
-- package.json
-- README.md
 - api/gm.js
-- api/health.js
 
-Then redeploy on Vercel.
-
-Required Vercel Environment Variable:
-- OPENAI_API_KEY = your OpenAI API key
-
-Optional:
-- OPENAI_MODEL = gpt-5.2
-
-Test backend:
-- /api/health should show ok:true and hasOpenAIKey:true
-- /api/gm must be called from the app using POST
-
-This version removes the OpenAI Node SDK import and uses fetch directly to avoid Vercel function import/runtime crashes.
+Changes:
+- In-character GM questions like "what do I see?" or "I check my surroundings" now produce clearer scene descriptions.
+- The GM gives obvious surroundings freely and only requests Perception for hidden/subtle details.
+- Keeps no-menu style by default.
+- Includes prior OOC Live AI fix if needed.
