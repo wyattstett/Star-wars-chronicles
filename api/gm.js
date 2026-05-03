@@ -221,7 +221,7 @@ Keep JSON valid. Escape quotes correctly. No trailing commas.
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         instructions,
         input,
-        response_format: { type: "json_object" },
+        text: { format: { type: "json_object" } },
         max_output_tokens: 1800
       })
     });
@@ -232,7 +232,7 @@ Keep JSON valid. Escape quotes correctly. No trailing commas.
       res.status(apiResponse.status).json({
         ok: false,
         error: `OpenAI API error ${apiResponse.status}`,
-        details: raw.slice(0, 1800)
+        details: raw.slice(0, 3000)
       });
       return;
     }
