@@ -9252,6 +9252,431 @@ window.SWC_BUILD_VERSION='v1.8.8.5-api-400-fix';
 function swcUpdateVersionBadge1885(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.8.5 AI'}
 setInterval(swcUpdateVersionBadge1885,1000);
 
+
+/* --- Campaign Sync Bridge v1.8.9.0 --- */
+window.SWC_BUILD_VERSION='v1.8.9.0-campaign-sync';
+
+function swcSyncNow(){return new Date().toISOString()}
+function swcArr(x){return Array.isArray(x)?x:[]}
+function swcText(x){return String(x==null?'':x)}
+function swcSlug(x,prefix='id'){
+  let s=swcText(x).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,48);
+  return (s||prefix)+'_'+Date.now().toString(36);
+}
+function swcLooseJsonParse(text){
+  try{return JSON.parse(text)}catch(e){}
+  let raw=swcText(text).trim();
+  raw=raw.replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  try{return JSON.parse(raw)}catch(e){}
+  let match=raw.match(/\{[\s\S]*\}/);
+  if(match){try{return JSON.parse(match[0])}catch(e){}}
+  return null;
+}
+function swcSyncRecord(title,details){
+  let log=[];
+  try{log=JSON.parse(localStorage.getItem('swc_campaign_sync_log_v1')||'[]')}catch(e){}
+  if(!Array.isArray(log))log=[];
+  log.unshift({id:'sync_'+Date.now()+'_'+Math.random().toString(16).slice(2),title:title||'Campaign Sync',details:details||'',time:Date.now()});
+  log=log.slice(0,100);
+  try{localStorage.setItem('swc_campaign_sync_log_v1',JSON.stringify(log))}catch(e){}
+}
+function swcCurrentLocationSnapshot(){
+  try{
+    if(typeof ensureORMap==='function')ensureORMap();
+    if(window.orMap&&window.orMap.current){
+      let p=(typeof planetById==='function')?planetById(window.orMap.current.planet):null;
+      return {
+        planetId:window.orMap.current.planet||'',
+        planet:p?.name||window.orMap.current.planet||'Unknown',
+        region:window.orMap.current.region||'',
+        area:window.orMap.current.area||''
+      };
+    }
+  }catch(e){}
+  return {planet:'Current Area',region:'',area:''};
+}
+function swcInventorySnapshot(){
+  try{
+    if(typeof ensureEquipment==='function')ensureEquipment();
+    if(typeof inventoryAllOwnedItems==='function'){
+      return inventoryAllOwnedItems().map(item=>({
+        id:item.id,
+        name:item.name,
+        category:item.category,
+        type:(typeof equipmentTypeLabel==='function')?equipmentTypeLabel(item):item.type,
+        quantity:(typeof inventoryQty==='function')?inventoryQty(item.id):0,
+        equippedSlots:(typeof inventoryEquippedSlotsFor==='function')?inventoryEquippedSlotsFor(item.id):[],
+        summary:item.summary||''
+      }));
+    }
+  }catch(e){}
+  return [];
+}
+function buildAiGmState(){
+  try{if(typeof ensureCampaignChat==='function')ensureCampaignChat()}catch(e){}
+  try{if(typeof ensureCampaignSettings==='function')ensureCampaignSettings()}catch(e){}
+  try{if(typeof ensureQuests==='function')ensureQuests()}catch(e){}
+  try{if(typeof ensureJournal==='function')ensureJournal()}catch(e){}
+  try{if(typeof ensureBonds==='function')ensureBonds()}catch(e){}
+  try{if(typeof ensureParty==='function')ensureParty()}catch(e){}
+  try{if(typeof ensureProgression==='function')ensureProgression()}catch(e){}
+  let c=(typeof char!=='undefined'&&char)?char:{};
+  let recentIn=swcArr(window.campaignChat?.in).slice(-12).map(m=>({role:m.role,text:m.text,time:m.time}));
+  let recentOut=swcArr(window.campaignChat?.out).slice(-8).map(m=>({role:m.role,text:m.text,time:m.time}));
+  return {
+    appVersion:window.SWC_BUILD_VERSION||'unknown',
+    syncVersion:'campaign-sync-v1.8.9.0',
+    campaignTitle:'Star Wars Chronicles',
+    ruleset:c.ruleset||'Old Republic / Saga hybrid',
+    character:{
+      name:c.name,
+      level:c.level,
+      species:typeof sp==='function'?sp().name:c.species,
+      className:typeof cls==='function'?cls().name:c.classId,
+      side:c.oldRepublicSide||c.side||'dark',
+      hp:{current:c.currentHp,max:typeof maxHp==='function'?maxHp():c.maxHp},
+      force:{current:c.currentFp,max:typeof maxFp==='function'?maxFp():c.maxFp},
+      xp:c.xp||0,
+      progressionMode:c.progressionMode||'xp',
+      credits:c.credits||0
+    },
+    location:swcCurrentLocationSnapshot(),
+    quests:swcArr(window.questBoard?.quests).map(q=>({id:q.id,title:q.title,type:q.type,status:q.status,description:q.description,objectives:q.objectives,rewards:q.rewards,source:q.source,updated:q.updated})),
+    journal:{
+      story:swcArr(window.journalState?.story).slice(0,25),
+      npcs:swcArr(window.journalState?.npcs).slice(0,60),
+      factions:swcArr(window.journalState?.factions).slice(0,30),
+      lore:swcArr(window.journalState?.lore).slice(0,25)
+    },
+    bonds:swcArr(window.shopBonds?.contacts).slice(0,60),
+    party:c.party||{},
+    inventory:swcInventorySnapshot(),
+    recentInCharacter:recentIn,
+    recentOutOfCharacter:recentOut,
+    gmSettings:window.campaignSettings?.ai||{},
+    syncInstructions:'When the GM output includes appUpdates/updates/npcUpdates/questUpdates/journalMemories/xpUpdates/inventoryUpdates/bondUpdates, the Campaign Sync bridge can apply them to local app state.'
+  };
+}
+function normalizeAiGmPayload(payload,raw){
+  let p=payload||{};
+  if(typeof p==='string')p=swcLooseJsonParse(p)||{narration:p};
+  if(p.structured)p=p.structured;
+  p.narration=swcText(p.narration||p.text||p.answer||'');
+  p.dialogue=swcArr(p.dialogue);
+  p.actions=swcArr(p.actions);
+  p.rollRequests=swcArr(p.rollRequests);
+  p.questUpdates=swcArr(p.questUpdates);
+  p.journalMemories=swcArr(p.journalMemories);
+  p.npcUpdates=swcArr(p.npcUpdates);
+  p.appUpdates=swcArr(p.appUpdates||p.updates);
+  p.xpUpdates=swcArr(p.xpUpdates);
+  p.inventoryUpdates=swcArr(p.inventoryUpdates);
+  p.bondUpdates=swcArr(p.bondUpdates);
+  p.locationUpdates=swcArr(p.locationUpdates);
+  p.imagePrompt=swcText(p.imagePrompt||'');
+  p.gmNotes=p.gmNotes||{};
+  if(raw&&!p.raw)p.raw=raw;
+  return p;
+}
+async function callAiGmEndpoint(playerMessage,chatMode='in'){
+  let endpoint=(window.campaignSettings?.aiTest?.endpoint)||'/api/gm';
+  let state=(typeof buildAiGmState==='function')?buildAiGmState():{character:(typeof char!=='undefined'?char:{})};
+  let res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerMessage,chatMode,state,requestedFormat:'structured-json-with-app-updates',timestamp:Date.now()})});
+  let text=await res.text();
+  let parsed=swcLooseJsonParse(text)||{narration:text,raw:text};
+  if(!res.ok)throw new Error(parsed.error||parsed.message||('HTTP '+res.status+': '+text));
+  let payload=normalizeAiGmPayload(parsed.structured||parsed,text);
+  try{
+    if(typeof swcEnsureAiHarnessState==='function')swcEnsureAiHarnessState();
+    window.campaignSettings.aiTest.lastStatus='AI GM response received at '+new Date().toLocaleString();
+    window.campaignSettings.aiTest.lastRaw=JSON.stringify(parsed,null,2);
+    window.campaignSettings.aiTest.lastStructured=payload;
+    if(typeof swcSaveSettingsSafe==='function')swcSaveSettingsSafe(); else if(typeof saveCampaignSettings==='function')saveCampaignSettings();
+  }catch(e){}
+  return payload;
+}
+function swcUpdateAllowed(type,manual){
+  if(manual)return true;
+  try{if(typeof ensureCampaignSettings==='function')ensureCampaignSettings()}catch(e){}
+  let ai=window.campaignSettings?.ai||{};
+  type=swcText(type).toUpperCase();
+  if(type.includes('QUEST'))return ai.autoQuestUpdates!==false;
+  if(type.includes('NPC'))return ai.autoNpcTracking!==false;
+  if(type.includes('JOURNAL')||type.includes('MEMORY')||type.includes('LOG'))return ai.autoJournalMemories!==false;
+  if(type.includes('XP')||type.includes('EXPERIENCE'))return ai.autoAwardCombatXp!==false;
+  return true;
+}
+function swcFindNpcRecord(data){
+  try{ensureJournal()}catch(e){}
+  let id=data.id||data.npcId;
+  let name=swcText(data.name||data.npcName).toLowerCase();
+  return swcArr(window.journalState?.npcs).find(n=>(id&&n.id===id)||(name&&swcText(n.name).toLowerCase()===name));
+}
+function swcApplyNpcUpdate(data){
+  ensureJournal();
+  data=data||{};
+  let name=data.name||data.npcName||data.title||'Unnamed NPC';
+  let n=swcFindNpcRecord(data);
+  if(!n){
+    n={id:data.id||data.npcId||swcSlug(name,'npc'),name,species:data.species||'Unknown',role:data.role||data.title||data.job||'NPC',location:data.location||data.firstMetLocation||swcCurrentLocationSnapshot().planet,notes:data.notes||data.description||'',influence:Number(data.influence||0),met:Date.now(),portrait:data.portrait||((typeof companionPortraitSvg==='function')?companionPortraitSvg({name,species:data.species||'Unknown'}):'')};
+    window.journalState.npcs.unshift(n);
+  }else{
+    n.name=name||n.name;
+    n.species=data.species||n.species||'Unknown';
+    n.role=data.role||data.title||data.job||n.role||'NPC';
+    n.location=data.location||data.firstMetLocation||n.location||swcCurrentLocationSnapshot().planet;
+    n.notes=data.notes||data.description||n.notes||'';
+    if(data.influence!=null)n.influence=Number(data.influence)||0;
+    n.updated=Date.now();
+  }
+  if(Number(n.influence||0)>0&&typeof promoteNpcToBond==='function')promoteNpcToBond(n.id);
+  saveJournal();
+  return 'NPC: '+n.name;
+}
+function swcFindQuest(data){
+  ensureQuests();
+  let id=data.id||data.questId;
+  let title=swcText(data.title||data.name).toLowerCase();
+  return window.questBoard.quests.find(q=>(id&&q.id===id)||(title&&swcText(q.title).toLowerCase()===title));
+}
+function swcApplyQuestUpdate(data,type){
+  ensureQuests();
+  data=data||{};
+  let q=swcFindQuest(data);
+  let title=data.title||data.name||'Untitled Quest';
+  if(!q){
+    q={id:data.id||data.questId||swcSlug(title,'quest'),title,type:data.questType||data.type||'main',status:data.status||'active',description:data.description||data.summary||'',objectives:swcArr(data.objectives).length?data.objectives:['Continue the objective'],rewards:swcArr(data.rewards),source:data.source||'Campaign Sync',updated:Date.now()};
+    window.questBoard.quests.unshift(q);
+  }else{
+    q.title=title||q.title;
+    q.type=data.questType||data.type||q.type||'main';
+    q.status=(type&&type.includes('COMPLETE'))?'completed':(data.status||q.status||'active');
+    if(data.description||data.summary)q.description=data.description||data.summary;
+    if(Array.isArray(data.objectives))q.objectives=data.objectives;
+    if(Array.isArray(data.completedObjectives)){q.completedObjectives=data.completedObjectives;}
+    if(Array.isArray(data.rewards))q.rewards=data.rewards;
+    q.source=data.source||q.source||'Campaign Sync';
+    q.updated=Date.now();
+  }
+  saveQuests();
+  return 'Quest: '+q.title;
+}
+function swcApplyJournalMemory(data){
+  ensureJournal();
+  data=data||{};
+  let title=data.title||data.name||'Campaign Memory';
+  let text=data.text||data.description||data.summary||data.notes||'';
+  window.journalState.story.unshift({id:data.id||swcSlug(title,'story'),title,text,importance:data.importance||'major',tags:swcArr(data.tags),consequences:swcArr(data.consequences),date:Date.now(),source:data.source||'Campaign Sync'});
+  saveJournal();
+  return 'Memory: '+title;
+}
+function swcApplyBondUpdate(data){
+  ensureBonds(); ensureJournal();
+  data=data||{};
+  let name=data.name||data.npcName||'';
+  let id=data.id||data.bondId||data.npcId;
+  let b=window.shopBonds.contacts.find(c=>(id&&c.id===id)||(name&&swcText(c.name).toLowerCase()===swcText(name).toLowerCase()));
+  if(!b&&name){
+    let npc=swcFindNpcRecord({name});
+    if(npc&&typeof promoteNpcToBond==='function'){
+      npc.influence=Math.max(1,Number(npc.influence||1));
+      promoteNpcToBond(npc.id);
+      b=window.shopBonds.contacts.find(c=>swcText(c.name).toLowerCase()===swcText(name).toLowerCase());
+    }
+  }
+  if(!b&&name){
+    b={id:id||swcSlug(name,'bond'),name,species:data.species||'Unknown',title:data.title||data.role||'Contact',location:data.location||swcCurrentLocationSnapshot().planet,influence:0,notes:data.notes||'',portrait:data.portrait||((typeof companionPortraitSvg==='function')?companionPortraitSvg({name,species:data.species||'Unknown'}):'')};
+    window.shopBonds.contacts.unshift(b);
+  }
+  if(!b)return 'Bond skipped';
+  let delta=Number(data.amount??data.delta??data.change??0);
+  if(data.influence!=null)b.influence=Number(data.influence)||0; else b.influence=Number(b.influence||0)+delta;
+  if(data.notes)b.notes=data.notes;
+  b.updated=Date.now();
+  saveBonds();
+  return 'Bond: '+b.name+' ('+(b.influence>=0?'+':'')+b.influence+')';
+}
+function swcApplyInventoryUpdate(data){
+  ensureEquipment();
+  data=data||{};
+  let name=data.name||data.itemName||data.title;
+  let id=data.id||data.itemId;
+  let qty=Math.max(1,Number(data.qty||data.quantity||1));
+  let item=(id&&typeof itemById==='function')?itemById(id):null;
+  if(!item&&name&&typeof itemByName==='function')item=itemByName(name);
+  if(!item&&name&&typeof ensureCustomItem==='function')item=ensureCustomItem(name,data.category||data.type||'gear');
+  if(item&&typeof addInventoryItem==='function'){
+    addInventoryItem(item.id,qty);
+    saveCharSilent();
+    return 'Item: '+item.name+' x'+qty;
+  }
+  return 'Item skipped';
+}
+function swcApplyXpUpdate(data){
+  data=data||{};
+  let amount=Number(data.amount||data.xp||data.value||0);
+  if(!amount)return 'XP skipped';
+  if(typeof addXpAmount==='function')addXpAmount(amount); else {char.xp=Number(char.xp||0)+amount; saveCharSilent();}
+  return 'XP: '+(amount>=0?'+':'')+amount;
+}
+function swcApplyCreditsUpdate(data){
+  data=data||{};
+  let amount=Number(data.amount||data.credits||data.value||0);
+  if(!amount)return 'Credits skipped';
+  if(typeof char!=='undefined'){char.credits=Number(char.credits||0)+amount;saveCharSilent();}
+  return 'Credits: '+(amount>=0?'+':'')+amount;
+}
+function swcNormalizeUpdates(payload){
+  let p=normalizeAiGmPayload(payload||{});
+  let updates=[];
+  swcArr(p.appUpdates).forEach(u=>updates.push(u));
+  swcArr(p.updates).forEach(u=>updates.push(u));
+  swcArr(p.npcUpdates).forEach(u=>updates.push({type:u.type||'ADD_NPC',payload:u}));
+  swcArr(p.questUpdates).forEach(u=>updates.push({type:u.type||'UPDATE_QUEST',payload:u}));
+  swcArr(p.journalMemories).forEach(u=>updates.push({type:u.type||'ADD_JOURNAL_MEMORY',payload:u}));
+  swcArr(p.xpUpdates).forEach(u=>updates.push({type:u.type||'ADD_XP',payload:u}));
+  swcArr(p.inventoryUpdates).forEach(u=>updates.push({type:u.type||'ADD_ITEM',payload:u}));
+  swcArr(p.bondUpdates).forEach(u=>updates.push({type:u.type||'UPDATE_INFLUENCE',payload:u}));
+  return updates;
+}
+function applyAiGmUpdates(payload,opts={}){
+  let manual=!!opts.manual;
+  let updates=swcNormalizeUpdates(payload);
+  let applied=[], skipped=[], unknown=[];
+  updates.forEach(u=>{
+    let type=swcText(u.type||u.action||'').toUpperCase();
+    let data=u.payload||u.data||u;
+    if(!type&&data.type)type=swcText(data.type).toUpperCase();
+    if(!swcUpdateAllowed(type,manual)){skipped.push(type||'UNKNOWN');return;}
+    try{
+      if(type.includes('NPC'))applied.push(swcApplyNpcUpdate(data));
+      else if(type.includes('QUEST')||type==='CREATE_QUEST'||type==='UPDATE_QUEST'||type==='COMPLETE_QUEST')applied.push(swcApplyQuestUpdate(data,type));
+      else if(type.includes('JOURNAL')||type.includes('MEMORY')||type==='SAVE_SESSION_LOG')applied.push(swcApplyJournalMemory(data));
+      else if(type.includes('BOND')||type.includes('INFLUENCE')||type==='UPDATE_INFLUENCE')applied.push(swcApplyBondUpdate(data));
+      else if(type.includes('XP')||type.includes('EXPERIENCE'))applied.push(swcApplyXpUpdate(data));
+      else if(type.includes('CREDIT'))applied.push(swcApplyCreditsUpdate(data));
+      else if(type.includes('ITEM')||type.includes('INVENTORY'))applied.push(swcApplyInventoryUpdate(data));
+      else unknown.push(type||'UNKNOWN');
+    }catch(e){skipped.push((type||'UNKNOWN')+': '+(e.message||e));}
+  });
+  if(applied.length||skipped.length||unknown.length){
+    swcSyncRecord(opts.source||'AI GM Update',JSON.stringify({applied,skipped,unknown},null,2));
+    try{if(typeof saveCampaignChat==='function')saveCampaignChat()}catch(e){}
+    try{if(typeof renderAll==='function')renderAll()}catch(e){}
+    try{let section=document.getElementById('campaignSectionLabel')?.textContent; if(section==='Quests'&&typeof renderQuests==='function')renderQuests(); if(section==='Journal'&&typeof renderJournal==='function')renderJournal(); if(section==='Bonds'&&typeof renderBonds==='function')renderBonds(); if(section==='Inventory'&&typeof renderInventory==='function')renderInventory(); if(section==='Progression'&&typeof renderProgression==='function')renderProgression(); if(section==='Campaign'&&typeof renderCampaignSettings==='function')renderCampaignSettings();}catch(e){}
+  }
+  return {applied,skipped,unknown,count:applied.length};
+}
+function formatAiGmForStory(payload){
+  let p=normalizeAiGmPayload(payload||{});
+  let parts=[];
+  if(p.narration)parts.push(p.narration);
+  swcArr(p.dialogue).forEach(d=>{if(d&&d.speaker&&d.text)parts.push(d.speaker+': "'+d.text+'"')});
+  swcArr(p.rollRequests).forEach(r=>{
+    let label=r.skill||r.save||r.attack||'Check';
+    let dc=r.dc?' DC '+r.dc:'';
+    let reason=r.reason?' — '+r.reason:'';
+    parts.push('[Action] Roll '+label+dc+reason);
+  });
+  if(p.actions&&p.actions.length){parts.push('Possible approaches:\n'+p.actions.map((a,i)=>(i+1)+'. '+a).join('\n'));}
+  if(p.combatTrigger)parts.push('[Action] Combat trigger prepared: '+(p.combatTrigger.reason||p.combatTrigger.title||'Story combat may begin.'));
+  if(p.imagePrompt)parts.push('[Action] Scene image prompt prepared.');
+  if(p._syncSummary&&p._syncSummary.applied&&p._syncSummary.applied.length)parts.push('[App Updated] '+p._syncSummary.applied.join('; '));
+  return parts.join('\n\n')||'The GM considers the next moment.';
+}
+function swcPlainOocAiText(payload){
+  let p=normalizeAiGmPayload(payload||{});
+  return p.narration||'OOC noted.';
+}
+async function sendGameMessage(){
+  try{
+    ensureCampaignChat();
+    if(typeof ensureCampaignSettings==='function')ensureCampaignSettings();
+    if(typeof swcEnsureAiHarnessState==='function')swcEnsureAiHarnessState();
+    let input=document.getElementById('storyInput');
+    let text=input?.value?.trim()||'';
+    if(!text)return;
+    let chatMode=(typeof mode!=='undefined'&&mode==='out')?'out':'in';
+    window.campaignChat[chatMode].push({id:'m_'+Date.now()+'_'+Math.random().toString(16).slice(2),mode:chatMode,role:'player',text,time:Date.now()});
+    if(input)input.value='';
+    saveCampaignChat(); renderGameChat();
+    let liveOn=!!(window.campaignSettings&&window.campaignSettings.aiTest&&window.campaignSettings.aiTest.enabled);
+    if(liveOn){
+      let thinkingId='gm_thinking_'+Date.now()+'_'+Math.random().toString(16).slice(2);
+      window.campaignChat[chatMode].push({id:thinkingId,mode:chatMode,role:'gm',text:chatMode==='out'?'OOC: AI GM is checking that...':'[Action] AI GM is thinking...',time:Date.now()+1});
+      saveCampaignChat(); renderGameChat();
+      try{
+        let payload=await callAiGmEndpoint(text,chatMode);
+        if(chatMode==='in')payload._syncSummary=applyAiGmUpdates(payload,{source:'Live AI GM',manual:false});
+        let msg=window.campaignChat[chatMode].find(m=>m.id===thinkingId);
+        if(msg){msg.text=chatMode==='out'?swcPlainOocAiText(payload):formatAiGmForStory(payload);msg.time=Date.now();}
+        if(chatMode==='out')window.campaignChat.sharedNotes.push({mode:chatMode,text,gmReply:msg?.text||'',time:Date.now()});
+        saveCampaignChat(); renderGameChat();
+        if(typeof swcInjectBottomStoryTabs==='function')setTimeout(swcInjectBottomStoryTabs,80);
+      }catch(e){
+        let msg=window.campaignChat[chatMode].find(m=>m.id===thinkingId);
+        if(msg){msg.text='AI GM error: '+(e.message||e);msg.time=Date.now();}
+        saveCampaignChat(); renderGameChat();
+      }
+      return;
+    }
+    let reply=chatMode==='out'?'OOC noted. This stays out of the story log, but the GM can use it as context.\n\nPlaceholder GM answer: I understand you asked/clarified — “'+text+'”.':gmPlaceholderReply(text,chatMode);
+    window.campaignChat[chatMode].push({id:'gm_'+Date.now()+'_'+Math.random().toString(16).slice(2),mode:chatMode,role:'gm',text:reply,time:Date.now()+1});
+    window.campaignChat.sharedNotes=window.campaignChat.sharedNotes||[];
+    window.campaignChat.sharedNotes.push({mode:chatMode,text,time:Date.now()});
+    saveCampaignChat(); renderGameChat();
+    if(typeof swcInjectBottomStoryTabs==='function')setTimeout(swcInjectBottomStoryTabs,80);
+  }catch(err){alert('Send failed: '+(err.message||err));}
+}
+function swcCopyText(text,label){
+  try{navigator.clipboard.writeText(text).then(()=>alert((label||'Text')+' copied.')).catch(()=>{prompt('Copy this:',text)})}catch(e){prompt('Copy this:',text)}
+}
+function swcExportCampaignState(){
+  let text=JSON.stringify(buildAiGmState(),null,2);
+  swcCopyText(text,'Campaign state');
+  let box=document.getElementById('swcSyncImportBox'); if(box)box.value=text;
+}
+function swcApplyManualGmUpdate(){
+  let box=document.getElementById('swcSyncImportBox');
+  let raw=box?.value||'';
+  let parsed=swcLooseJsonParse(raw);
+  if(!parsed){alert('Could not parse JSON. Paste a GM Update block or campaign update JSON.');return;}
+  let summary=applyAiGmUpdates(parsed,{source:'Manual GM Import',manual:true});
+  let msg='Applied '+summary.applied.length+' update(s).';
+  if(summary.skipped.length)msg+=' Skipped: '+summary.skipped.join('; ');
+  if(summary.unknown.length)msg+=' Unknown: '+summary.unknown.join('; ');
+  alert(msg);
+  if(typeof renderCampaignSettings==='function')renderCampaignSettings();
+}
+function swcSampleGmUpdate(){
+  let sample={updates:[
+    {type:'ADD_NPC',payload:{name:'Vareth Korr',species:'Human',role:'Sith Archivist',location:swcCurrentLocationSnapshot().planet,notes:'Met during a GM scene. No influence yet.',influence:0}},
+    {type:'ADD_XP',payload:{amount:150,reason:'Completed a meaningful story objective.'}},
+    {type:'ADD_JOURNAL_MEMORY',payload:{title:'Important Story Beat',text:'Summarize the consequence here.',tags:['GM Update'],consequences:['Future scenes may reference this.']}},
+    {type:'CREATE_QUEST',payload:{title:'A New Objective',type:'main',status:'active',description:'Quest description here.',objectives:['Complete the next story objective'],rewards:['XP','Influence','Story progression']}}
+  ]};
+  let box=document.getElementById('swcSyncImportBox'); if(box)box.value=JSON.stringify(sample,null,2);
+}
+function swcCampaignSyncPanelHtml(){
+  return '<div class="campaign-card" id="swcCampaignSyncPanel"><h3>Campaign Sync Bridge</h3><p class="note"><b>Use this while ChatGPT is the GM brain and the app is the campaign database.</b><br>Export the current state, paste it into ChatGPT, then paste the GM Update JSON back here to update NPCs, quests, XP, inventory, Bonds, and Journal memories.</p><div class="camp-card-actions"><button class="blue" onclick="swcExportCampaignState()">Copy Campaign State</button><button onclick="swcSampleGmUpdate()">Insert Sample GM Update</button><button class="gold" onclick="swcApplyManualGmUpdate()">Apply GM Update</button></div><textarea id="swcSyncImportBox" style="min-height:180px;margin-top:12px" placeholder="Paste GM Update JSON here. Example: { &quot;updates&quot;: [ { &quot;type&quot;: &quot;ADD_NPC&quot;, &quot;payload&quot;: { &quot;name&quot;: &quot;Vareth Korr&quot; } } ] }"></textarea><p class="note">Later this same update format can become real API/MCP tools. For now it gives us reliable one-paste syncing without forcing the in-app AI to carry the whole campaign yet.</p></div>';
+}
+function swcInjectCampaignSyncPanel(){
+  try{
+    let label=document.getElementById('campaignSectionLabel');
+    if(!label||label.textContent.trim().toLowerCase()!=='campaign')return;
+    if(document.getElementById('swcCampaignSyncPanel'))return;
+    let board=document.querySelector('.campaign-board');
+    if(!board)return;
+    let hero=board.querySelector('.campaign-hero');
+    if(hero)hero.insertAdjacentHTML('afterend',swcCampaignSyncPanelHtml()); else board.insertAdjacentHTML('afterbegin',swcCampaignSyncPanelHtml());
+  }catch(e){console.warn('Campaign Sync panel failed',e)}
+}
+function swcUpdateVersionBadge1890(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.9.0 Sync'}
+setInterval(swcInjectCampaignSyncPanel,900);
+setInterval(swcUpdateVersionBadge1890,1000);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectCampaignSyncPanel,500));
+
+
 applyClassDefaults();renderAll();renderCharStep();
 </script>
 </body>
