@@ -1,11 +1,15 @@
-# Star Wars Chronicles v1.8.8.4
+# Star Wars Chronicles v1.8.9.0 Campaign Sync Bridge
 
 Replace:
-- index.html
-- api/gm.js
+- `index.html`
+- `api/gm.js`
+- `api/health.js`
+- `package.json`
 
 Changes:
-- In-character GM questions like "what do I see?" or "I check my surroundings" now produce clearer scene descriptions.
-- The GM gives obvious surroundings freely and only requests Perception for hidden/subtle details.
-- Keeps no-menu style by default.
-- Includes prior OOC Live AI fix if needed.
+- Adds Campaign Sync Bridge panel to Campaign Control.
+- Adds Copy Campaign State and Apply GM Update JSON workflow.
+- Adds local update handling for NPCs, Bonds/Influence, XP, credits, inventory items, quests, and Journal memories.
+- Adds missing live AI helper functions used by the AI test harness.
+- Updates `/api/gm` to return structured `appUpdates` for auto-syncable campaign changes.
+- Keeps Chat Completions compatibility to avoid the previous Responses/JSON mode 400 issue.
