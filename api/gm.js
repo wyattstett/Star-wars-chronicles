@@ -19,6 +19,10 @@ function fallbackPayload(text) {
     questUpdates: [],
     journalMemories: [],
     npcUpdates: [],
+    appUpdates: [],
+    xpUpdates: [],
+    inventoryUpdates: [],
+    bondUpdates: [],
     combatTrigger: null,
     imagePrompt: "",
     gmNotes: {
@@ -32,15 +36,16 @@ function compactForPrompt(state) {
   const safe = state || {};
   return {
     appVersion: safe.appVersion,
+    syncVersion: safe.syncVersion,
     ruleset: safe.ruleset,
     campaignTitle: safe.campaignTitle,
     character: safe.character,
     location: safe.location,
     quests: safe.quests || [],
     journal: safe.journal || {},
+    bonds: safe.bonds || [],
     party: safe.party || {},
     inventory: safe.inventory || [],
-    voices: safe.voices || {},
     recentInCharacter: safe.recentInCharacter || [],
     recentOutOfCharacter: safe.recentOutOfCharacter || [],
     gmSettings: safe.gmSettings || {}
@@ -69,30 +74,45 @@ module.exports = async function handler(req, res) {
     const compactState = compactForPrompt(state);
 
     const systemPrompt = `
-You are the AI Game Master for a mobile Star Wars: Old Republic tabletop RPG app.
+You are the AI Game Master for Star Wars Chronicles, a mobile Old Republic tabletop RPG app.
 
 Return ONLY valid JSON. No markdown. No commentary outside JSON.
+
+Core GM rules:
+- Do not speak for the player character, decide their thoughts, emotions, dialogue, or next action.
+- Keep continuity locked to the current state and recent story.
+- Do not teleport the player, skip time, grant loot, start combat, or update quests unless justified by the player's action or the current scene.
+- Use cinematic but grounded Old Republic Star Wars tone.
+- Avoid menu-style choices unless the player asks what they can do.
 
 If chatMode is "out":
 - Do NOT continue the story.
 - Answer as an out-of-character tabletop GM/rules/helper.
 - Put the direct answer in narration.
-- Leave dialogue, actions, questUpdates, journalMemories, npcUpdates, combatTrigger, and imagePrompt empty unless the user explicitly asks for design/planning help.
+- Leave update arrays empty unless the user explicitly asks for planning/design changes.
 
 If chatMode is "in":
 - Continue the current scene from the supplied campaign state and recent story.
 - Stay locked to the exact active scene. Do not change locations unless the player actually moves.
-- If the player asks "what do I see?", "I check my surroundings", "can I roll Perception?", or similar, clearly describe the immediate surroundings first.
+- If the player asks "what do I see?", "I check my surroundings", "can I roll Perception?", or similar, clearly describe immediate surroundings first.
 - Give obvious visible/audible/sensory details freely without a roll.
 - Only request Perception for hidden threats, concealed details, subtle clues, eavesdropping, or reading behavior.
-- Do not give menu-style action options by default. Leave actions empty unless the player asks what they can do.
-- Do not speak for the player character, decide their thoughts, emotions, dialogue, or next action.
-- Do not teleport the player, skip time, grant loot, start combat, or update quests unless justified by the action.
-
-Style:
-- Cinematic but grounded Old Republic Star Wars.
 - If on Korriban, use specific details: red dust, harsh sun, Sith Academy structures, Imperial sentries, robed initiates, black stone, old Sith statues, dry wind, tomb silhouettes in the distance.
-- Be specific. Avoid vague phrases like "wherever they are", "the area", "some people", or "various structures."
+
+Campaign Sync rules:
+- When the player learns a named NPC, include an ADD_NPC app update.
+- When an NPC gains influence, include UPDATE_INFLUENCE.
+- When XP is earned, include ADD_XP.
+- When an item is gained or lost, include ADD_ITEM or REMOVE_ITEM.
+- When a quest is created, advanced, completed, or failed, include CREATE_QUEST, UPDATE_QUEST, COMPLETE_QUEST, or FAIL_QUEST.
+- When a fact is important for future continuity, include ADD_JOURNAL_MEMORY.
+- Only include app updates for real story changes. Do not spam updates for every sentence.
+
+Supported appUpdates format:
+{
+  "type": "ADD_NPC | UPDATE_NPC | UPDATE_INFLUENCE | ADD_XP | ADD_ITEM | ADD_CREDITS | CREATE_QUEST | UPDATE_QUEST | COMPLETE_QUEST | ADD_JOURNAL_MEMORY | SAVE_SESSION_LOG",
+  "payload": { }
+}
 
 Return this exact JSON shape:
 {
@@ -107,6 +127,10 @@ Return this exact JSON shape:
   "questUpdates": [],
   "journalMemories": [],
   "npcUpdates": [],
+  "appUpdates": [],
+  "xpUpdates": [],
+  "inventoryUpdates": [],
+  "bondUpdates": [],
   "combatTrigger": null,
   "imagePrompt": "",
   "gmNotes": {
@@ -132,7 +156,7 @@ Return this exact JSON shape:
           { role: "user", content: JSON.stringify(userPayload) }
         ],
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 1600
       })
     });
 
@@ -143,7 +167,7 @@ Return this exact JSON shape:
         ok: false,
         error: `OpenAI API error ${apiResponse.status}`,
         details: raw.slice(0, 5000),
-        hint: "This endpoint uses /v1/chat/completions with no JSON mode. If this fails, the error details should reveal model access, billing/quota, invalid key, or a malformed request."
+        hint: "This endpoint uses /v1/chat/completions. Error details usually reveal model access, billing/quota, invalid key, or malformed request."
       });
       return;
     }
@@ -152,19 +176,16 @@ Return this exact JSON shape:
     const outputText = openaiJson.choices?.[0]?.message?.content || "";
     const structured = safeJsonParse(outputText) || fallbackPayload(outputText);
 
-    if (!Array.isArray(structured.actions)) structured.actions = [];
-    if (!Array.isArray(structured.dialogue)) structured.dialogue = [];
-    if (!Array.isArray(structured.rollRequests)) structured.rollRequests = [];
-    if (!Array.isArray(structured.questUpdates)) structured.questUpdates = [];
-    if (!Array.isArray(structured.journalMemories)) structured.journalMemories = [];
-    if (!Array.isArray(structured.npcUpdates)) structured.npcUpdates = [];
+    for (const key of ["actions", "dialogue", "rollRequests", "questUpdates", "journalMemories", "npcUpdates", "appUpdates", "xpUpdates", "inventoryUpdates", "bondUpdates"]) {
+      if (!Array.isArray(structured[key])) structured[key] = [];
+    }
 
     res.status(200).json({
       ok: true,
       structured,
       raw: outputText,
       responseId: openaiJson.id || null,
-      backend: "chat-completions-compat-v1.8.8.7"
+      backend: "chat-completions-campaign-sync-v1.8.9.0"
     });
   } catch (error) {
     res.status(500).json({
