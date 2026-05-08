@@ -2818,14 +2818,14 @@
     <div class="logo-wrap"><div class="star-icon">★</div><div class="logo-star sci">STAR WARS</div><div class="logo-chron sci">CHRONICLES</div><p class="tagline">An AI Game Master awaits. Build your character, choose your era, and forge your destiny.</p></div>
     <div class="menu-actions"><button class="btn primary full" onclick="showScreen('newCampaign')">＋ New Campaign</button><button class="btn blue full" onclick="openCampaign()">▷ Continue</button></div>
     <div class="title-row"><h3>Character<br>Library</h3><button class="btn primary" onclick="startCharacter()">＋ New Character</button></div>
-    <div class="char-card" onclick="showScreen('characterSheet')"><div class="avatar" id="dashAvatar">⚔️</div><div><div class="card-title" id="dashName">Cin'Bedil</div><div class="card-sub" id="dashSub">Lvl 1 · Twi'lek Jedi</div></div></div>
-    <div class="title-row"><h3>Recent Campaigns</h3></div><div class="camp-card selected" onclick="openCampaign()"><div class="avatar">🗡️</div><div><div class="card-title">The Old Republic Dark Side Campaign</div><div class="card-sub">Old Republic · Custom</div></div></div>
+    <div id="characterLibraryList"><div class="char-card" onclick="showScreen('characterSheet')"><div class="avatar" id="dashAvatar">⚔️</div><div><div class="card-title" id="dashName">Cin'Bedil</div><div class="card-sub" id="dashSub">Lvl 1 · Twi'lek Jedi</div></div></div></div>
+    <div class="title-row"><h3>Recent Campaigns</h3><button class="btn blue small" onclick="swcCreateCampaignFromWizard();showScreen('dashboard')">＋ Save Campaign</button></div><div id="campaignLibraryList"><div class="camp-card selected" onclick="openCampaign()"><div class="avatar">🗡️</div><div><div class="card-title">The Old Republic Dark Side Campaign</div><div class="card-sub">Old Republic · Custom</div></div></div></div>
   </section>
 
   <section id="newCampaign" class="screen">
     <button class="back" onclick="showScreen('dashboard')">‹</button><h1 class="gold-heading" style="text-align:center">New Campaign</h1>
     <div class="panel gold"><h2 class="gold-heading" style="font-size:22px">Select Character</h2><div class="char-card selected"><div><div class="card-title" id="campCharName">Cin'Bedil</div><div class="card-sub" id="campCharSub">Lvl 1 Twi'lek Jedi</div></div></div><div class="note" style="margin-top:14px;cursor:pointer" onclick="startCharacter()">＋ Create a new character</div></div>
-    <div class="panel gold" style="margin-top:28px"><div class="field"><label class="label">Campaign Name</label><input value="Dark Side Campaign" placeholder="Name your adventure..."></div></div>
+    <div class="panel gold" style="margin-top:28px"><div class="field"><label class="label">Campaign Name</label><input id="newCampaignName" value="Dark Side Campaign" placeholder="Name your adventure..."></div></div>
     <div class="panel gold" style="margin-top:28px"><h2 class="gold-heading" style="font-size:22px">Ruleset</h2><div class="choice-list">
       <div class="option-card" id="campaignRuleSaga" onclick="setRuleset('Saga Edition')"><div style="font-size:32px">⚔️</div><div><div class="card-title" style="color:#9fc6ff">Star Wars Saga Edition</div><div class="card-sub">Official-style rules engine with custom summaries</div></div></div>
       <div class="option-card" id="campaignRuleOldRepublic" onclick="setRuleset('Old Republic Campaign Rules')"><div style="font-size:32px">🌌</div><div><div class="card-title" style="color:var(--gold)">Old Republic Campaign Rules</div><div class="card-sub">Choose Light, Dark, or Neutral starts; class families change by side</div></div></div>
@@ -2843,7 +2843,7 @@
   </section>
 
   <section id="campaign" class="screen story-layout">
-    <div class="topbar"><button class="hamb" onclick="toggleDrawer(true)">☰</button><div class="head-title"><h2>The Old Republic Dark Side Campaign</h2><p id="campaignSub">Old Republic · Cin'Bedil</p></div><div class="section-label" id="campaignSectionLabel">Story</div></div>
+    <div class="topbar"><button class="hamb" onclick="toggleDrawer(true)">☰</button><div class="head-title"><h2 id="campaignTitle">The Old Republic Dark Side Campaign</h2><p id="campaignSub">Old Republic · Cin'Bedil</p></div><div class="section-label" id="campaignSectionLabel">Story</div></div>
     <div id="storyView"><div class="collapser"><div class="label">♫ Soundtrack <span>⌄</span></div></div><div class="collapser" onclick="toggleScene()"><div class="label">▧ Scene Image <span id="sceneChevron">⌄</span></div></div><div id="sceneImage" class="scene-img" style="display:none"><div class="img-tools"><button>↗</button><button>⌘</button><button>↻</button></div></div><div class="mode-tabs"><button id="inCharTab" class="active" onclick="setMode('in')">⚔ In Character</button><button id="outCharTab" onclick="setMode('out')">▢ Out of Character</button></div><div class="chat-context" id="chatContextBox"></div><div class="chat-log" id="chatLog"></div><div class="input-area"><div class="input-title" id="inputTitle">⚔ In Character <span class="muted">— story, actions, dialogue</span></div><div class="send-row"><textarea id="storyInput" placeholder="What do you do? Describe your action..."></textarea><button class="send-btn" onclick="sendGameMessage()">➤</button></div></div></div>
     <div id="campaignPlaceholder" style="display:none;padding:20px 16px"><div class="panel gold"><h2 class="gold-heading" id="placeholderTitle">Section</h2><p class="note" id="placeholderText">Placeholder section.</p></div></div>
   </section>
@@ -2876,6 +2876,11 @@
 
 <script>
 const STORAGE_KEY='swc_v03b_char';
+const CHARACTER_LIBRARY_KEY='swc_character_library_v1';
+const CAMPAIGN_LIBRARY_KEY='swc_campaign_library_v1';
+const ACTIVE_CHARACTER_ID_KEY='swc_active_character_id_v1';
+const ACTIVE_CAMPAIGN_ID_KEY='swc_active_campaign_id_v1';
+const CAMPAIGN_STATE_KEYS=['swc_campaign_chat_v1','swc_quest_board_v1','swc_journal_v1','swc_bonds_v1','swc_campaign_settings_v1','swc_or_map_v1','swc_ship_state_v1','swc_combat_v1','swc_campaign_sync_log_v1'];
 const sources=["All", "Core Rulebook", "Full Saga Library", "Starships of the Galaxy", "Threats of the Galaxy", "Knights of the Old Republic Campaign Guide", "The Force Unleashed Campaign Guide", "Jedi Academy Training Manual", "Scum and Villainy", "Galaxy at War", "The Clone Wars Campaign Guide", "Legacy Era Campaign Guide", "Rebellion Era Campaign Guide", "Galaxy of Intrigue", "Scavenger's Guide to Droids", "The Unknown Regions", "Web Enhancements", "Custom / Homebrew"];
 const speciesData={"advozse": {"name": "Advozse", "mods": {"con": 2, "wis": 2, "dex": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "aleena": {"name": "Aleena", "mods": {"dex": 2, "cha": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "altiri": {"name": "Altiri", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "amani": {"name": "Amani", "mods": {"str": 2, "int": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "anarrian": {"name": "Anarrian", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "anzat": {"name": "Anzat", "mods": {}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Anzati"], "traitEffects": []}, "anzati": {"name": "Anzati", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "aqualish": {"name": "Aqualish", "mods": {"con": 2, "wis": -2, "cha": -2}, "traits": ["Rough frontier culture placeholder"], "speed": 6, "languages": ["Basic", "Aqualish"], "source": "SWSE Species Table", "traitEffects": []}, "arcona": {"name": "Arcona", "mods": {"cha": 2, "wis": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Arconese"], "source": "SWSE Species Table", "traitEffects": []}, "arkanian": {"name": "Arkanian", "mods": {"int": 2, "cha": -2}, "traits": ["Genetic mastery culture placeholder"], "speed": 6, "languages": ["Basic", "Arkanian"], "source": "SWSE Species Table", "traitEffects": []}, "arkanian_offshoot": {"name": "Arkanian Offshoot", "mods": {"str": 2, "con": -2}, "traits": ["Engineered lineage placeholder"], "speed": 6, "languages": ["Basic", "Arkanian"], "source": "SWSE Species Table", "variants": {"str": {"name": "Strength Lineage", "mods": {"str": 2, "con": -2}}, "dex": {"name": "Dexterity Lineage", "mods": {"dex": 2, "con": -2}}}, "modsNote": "Choose +2 Strength or +2 Dexterity; both variants have -2 Constitution.", "traitEffects": []}, "balosar": {"name": "Balosar", "mods": {"dex": 2, "cha": 2, "con": -2, "wis": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "barabel": {"name": "Barabel", "mods": {"str": 2, "dex": -2, "wis": -2}, "traits": ["Predatory warrior culture placeholder"], "speed": 6, "languages": ["Basic", "Barabel"], "source": "SWSE Species Table", "traitEffects": []}, "besalisk": {"name": "Besalisk", "mods": {}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "traitEffects": []}, "bith": {"name": "Bith", "mods": {"int": 2, "cha": 2, "con": -2}, "traits": ["Analytical musician culture placeholder"], "speed": 6, "languages": ["Basic", "Bith"], "source": "SWSE Species Table", "traitEffects": []}, "blood_carver": {"name": "Blood Carver", "mods": {"dex": 2, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "bothan": {"name": "Bothan", "mods": {"dex": 2, "con": -2}, "traits": ["Skilled information broker culture", "Conditional bonuses/rerolls pending detailed coding", "Automatic languages: Basic and Bothese"], "speed": 6, "languages": ["Basic", "Bothese"], "source": "SWSE Species Table", "traitEffects": []}, "caamasi": {"name": "Caamasi", "mods": {"wis": 4, "str": -2, "con": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "cathar": {"name": "Cathar", "mods": {"dex": 2, "int": -2}, "traits": ["Proud warrior culture placeholder"], "speed": 6, "languages": ["Basic", "Catharese"], "source": "SWSE Species Table", "traitEffects": []}, "celegian": {"name": "Celegian", "mods": {"int": 2, "dex": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "cerean": {"name": "Cerean", "mods": {"int": 2, "wis": 2, "dex": -2}, "traits": ["Binary brain placeholder"], "speed": 6, "languages": ["Basic", "Cerean"], "source": "SWSE Species Table", "traitEffects": []}, "chadra_fan": {"name": "Chadra-Fan", "mods": {"dex": 2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "chagrian": {"name": "Chagrian", "mods": {"str": 2, "dex": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Chagri"], "source": "SWSE Species Table", "traitEffects": []}, "chevin": {"name": "Chevin", "mods": {"con": 2, "dex": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "traitEffects": []}, "chiss": {"name": "Chiss", "mods": {"int": 2}, "traits": ["Tactical culture placeholder"], "speed": 6, "languages": ["Basic", "Cheunh"], "source": "SWSE Species Table", "traitEffects": []}, "chistori": {"name": "Chistori", "mods": {"str": 2, "dex": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "clawdite": {"name": "Clawdite", "mods": {"cha": 2, "str": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "codru_ji": {"name": "Codru-Ji", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "dashade": {"name": "Dashade", "mods": {"dex": 2, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "defel": {"name": "Defel", "mods": {"int": 2, "str": -2}, "traits": ["Shadowy species placeholder"], "speed": 6, "languages": ["Defel"], "source": "SWSE Species Table", "traitEffects": []}, "devaronian": {"name": "Devaronian", "mods": {"dex": 2, "wis": -2, "cha": -2}, "traits": ["Gendered ability modifier placeholder"], "speed": 6, "languages": ["Basic", "Devaronese"], "modsNote": "Choose male/female modifier set.", "source": "SWSE Species Table", "variants": {"male": {"name": "Male", "mods": {"dex": 2, "wis": -2, "cha": -2}}, "female": {"name": "Female", "mods": {"int": 2, "wis": 2, "dex": -2}}}, "traitEffects": []}, "draethos": {"name": "Draethos", "mods": {"con": 2, "cha": -2}, "traits": ["Long-lived scholar-warrior placeholder"], "speed": 6, "languages": ["Basic", "Draethos"], "source": "SWSE Species Table", "traitEffects": []}, "drall": {"name": "Drall", "mods": {"int": 2, "wis": 2, "str": -2, "dex": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Drallish"], "traitEffects": []}, "dug": {"name": "Dug", "mods": {"dex": 2, "cha": -2}, "traits": ["Agile limb movement placeholder"], "speed": 6, "languages": ["Basic", "Dug"], "source": "SWSE Species Table", "traitEffects": []}, "duros": {"name": "Duros", "mods": {"dex": 2, "int": 2, "con": -2}, "traits": ["Expert pilot/spacer aptitude placeholder", "Automatic languages: Basic and Durese"], "speed": 6, "languages": ["Basic", "Durese"], "source": "SWSE Species Table", "traitEffects": []}, "ebruchi": {"name": "Ebruchi", "mods": {"str": 2, "con": 2, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "elomin": {"name": "Elomin", "mods": {"int": 2, "cha": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "ewok": {"name": "Ewok", "mods": {"dex": 2, "str": -2}, "traits": ["Primitive survivalist placeholder"], "speed": 6, "languages": ["Ewokese"], "source": "SWSE Species Table", "traitEffects": []}, "falleen": {"name": "Falleen", "mods": {"cha": 2, "wis": -2}, "traits": ["Pheromone/social influence placeholder"], "speed": 6, "languages": ["Basic", "Falleen"], "source": "SWSE Species Table", "traitEffects": []}, "feeorin": {"name": "Feeorin", "mods": {"str": 2, "con": 2, "dex": -2, "wis": -2, "cha": -2}, "traits": ["Long-lived hardy species placeholder"], "speed": 6, "languages": ["Basic", "Feeorin"], "source": "SWSE Species Table", "traitEffects": []}, "felucian": {"name": "Felucian", "mods": {"con": 2, "int": -2}, "traits": ["Force-attuned jungle culture placeholder"], "speed": 6, "languages": ["Felucian"], "source": "SWSE Species Table", "traitEffects": []}, "fosh": {"name": "Fosh", "mods": {"dex": 2, "cha": 2, "con": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "gamorrean": {"name": "Gamorrean", "mods": {"str": 2, "dex": -2, "int": -2}, "traits": ["Brutish warrior culture placeholder"], "speed": 6, "languages": ["Gamorrean"], "source": "SWSE Species Table", "traitEffects": []}, "gand": {"name": "Gand", "mods": {"wis": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "gendai": {"name": "Gen'Dai", "mods": {"con": 4, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "geonosian": {"name": "Geonosian", "mods": {"str": 2, "int": -2, "cha": -2}, "traits": ["Hive culture placeholder"], "speed": 6, "languages": ["Geonosian"], "source": "SWSE Species Table", "traitEffects": []}, "givin": {"name": "Givin", "mods": {"int": 2, "str": -2}, "traits": ["Mathematical species placeholder"], "speed": 6, "languages": ["Basic", "Givin"], "source": "SWSE Species Table", "traitEffects": []}, "gormak": {"name": "Gormak", "mods": {"str": 2, "cha": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "traitEffects": []}, "gotal": {"name": "Gotal", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "gran": {"name": "Gran", "mods": {"cha": 2, "int": -2}, "traits": ["Three-eyed diplomat culture placeholder"], "speed": 6, "languages": ["Basic", "Gran"], "source": "SWSE Species Table", "traitEffects": []}, "gungan": {"name": "Gungan", "mods": {"dex": 2, "int": -2, "cha": -2}, "traits": ["Aquatic adaptation placeholder", "Automatic languages: Basic and Gunganese"], "speed": 6, "languages": ["Basic", "Gunganese"], "source": "SWSE Species Table", "traitEffects": []}, "harch": {"name": "Harch", "mods": {"wis": 2, "cha": -2}, "traits": ["Multi-armed species placeholder"], "speed": 6, "languages": ["Basic", "Harchese"], "traitEffects": []}, "herglic": {"name": "Herglic", "mods": {"str": 4, "dex": -4}, "traits": ["Large aquatic trader culture placeholder"], "speed": 6, "languages": ["Basic", "Herglese"], "source": "SWSE Species Table", "traitEffects": []}, "houk": {"name": "Houk", "mods": {"str": 2, "con": 2, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "human": {"name": "Human", "mods": {}, "traits": ["No ability modifiers (official)", "Bonus feat", "Bonus trained skill", "Automatic language: Basic"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": [{"type": "extra_feat", "amount": 1}, {"type": "extra_trained_skill", "amount": 1}]}, "hutt": {"name": "Hutt", "mods": {"str": 2, "con": 2, "int": 2, "dex": -6}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Huttese"], "source": "SWSE Species Table", "traitEffects": []}, "iktotchi": {"name": "Iktotchi", "mods": {"con": 2, "cha": -2}, "traits": ["Precognitive tradition placeholder"], "speed": 6, "languages": ["Basic", "Iktotchese"], "source": "SWSE Species Table", "traitEffects": []}, "ishi_tib": {"name": "Ishi Tib", "mods": {"int": 2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "ithorian": {"name": "Ithorian", "mods": {"wis": 2, "cha": 2, "dex": -2}, "traits": ["Bellow ability placeholder", "Automatic languages: Basic and Ithorese"], "speed": 6, "languages": ["Basic", "Ithorese"], "source": "SWSE Species Table", "traitEffects": []}, "jawa": {"name": "Jawa", "mods": {"dex": 2, "str": -2}, "traits": ["Scavenger culture placeholder"], "speed": 6, "languages": ["Jawaese"], "source": "SWSE Species Table", "traitEffects": []}, "kaleesh": {"name": "Kaleesh", "mods": {"cha": 2, "con": 2, "int": -2, "dex": -2}, "traits": ["Warrior culture placeholder"], "speed": 6, "languages": ["Basic", "Kaleesh"], "source": "SWSE Species Table", "traitEffects": []}, "kaminoan": {"name": "Kaminoan", "mods": {"int": 2, "wis": -2}, "traits": ["Cloning culture placeholder"], "speed": 6, "languages": ["Basic", "Kaminoan"], "source": "SWSE Species Table", "traitEffects": []}, "kel_dor": {"name": "Kel Dor", "mods": {"dex": 2, "wis": 2, "con": -2}, "traits": ["Atmospheric dependency note", "Low-light/darkvision style senses pending detailed coding", "Automatic languages: Basic and Kel Dor"], "speed": 6, "languages": ["Basic", "Kel Dor"], "source": "SWSE Species Table", "traitEffects": []}, "kerkoiden": {"name": "Kerkoiden", "mods": {"wis": 2, "con": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "kessurian": {"name": "Kessurian", "mods": {"cha": 2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic"], "traitEffects": []}, "khil": {"name": "Khil", "mods": {"int": 2, "cha": 2, "con": -2}, "traits": ["Tentacled species placeholder"], "speed": 6, "languages": ["Basic", "Khilese"], "source": "SWSE Species Table", "traitEffects": []}, "killik": {"name": "Killik", "mods": {"con": 2, "int": -2}, "traits": ["Hive mind culture placeholder"], "speed": 6, "languages": ["Killik"], "source": "SWSE Species Table", "traitEffects": []}, "kissai": {"name": "Kissai", "mods": {"cha": 2, "wis": -2}, "traits": ["Ancient Sith priest caste placeholder"], "speed": 6, "languages": ["Sith"], "source": "SWSE Species Table", "traitEffects": []}, "klatooinian": {"name": "Klatooinian", "mods": {"con": 2, "int": -2, "wis": -2}, "traits": ["Service-bound culture placeholder"], "speed": 6, "languages": ["Basic", "Huttese"], "source": "SWSE Species Table", "traitEffects": []}, "koorivar": {"name": "Koorivar", "mods": {"int": 2, "cha": 2, "con": -2}, "traits": ["Merchant culture placeholder"], "speed": 6, "languages": ["Basic", "Koorivar"], "traitEffects": []}, "krevaaki": {"name": "Krevaaki", "mods": {"wis": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "kyuzo": {"name": "Kyuzo", "mods": {"dex": 2, "wis": -2, "cha": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Kyuzo"], "traitEffects": []}, "lepi": {"name": "Lepi", "mods": {"dex": 2, "str": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Lepi"], "traitEffects": []}, "lugubraa": {"name": "Lugubraa", "mods": {"str": 2, "con": 2, "dex": -2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "lurmen": {"name": "Lurmen", "mods": {"wis": 2, "str": -2}, "traits": ["Pacifist culture placeholder"], "speed": 6, "languages": ["Basic", "Lurmen"], "source": "SWSE Species Table", "traitEffects": []}, "mantellian_savrip": {"name": "Mantellian Savrip", "mods": {"str": 4, "con": 4, "dex": -2, "int": -4, "wis": -4, "cha": -4}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "massassi": {"name": "Massassi", "mods": {"str": 4, "int": -2, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Sith"], "source": "SWSE Species Table", "traitEffects": []}, "miraluka": {"name": "Miraluka", "mods": {"int": 2, "dex": -2}, "traits": ["Force Sight: perceives surroundings through the Force", "Automatic languages: Basic and Miralukese"], "speed": 6, "languages": ["Basic", "Miralukese"], "source": "SWSE Species Table", "traitEffects": [{"type": "ability", "label": "Force Sight", "note": "Sight-related species ability; detailed rules pending"}]}, "mirialan": {"name": "Mirialan", "mods": {"dex": 2}, "traits": ["Spiritual tradition placeholder"], "speed": 6, "languages": ["Basic", "Mirialan"], "traitEffects": []}, "mon_calamari": {"name": "Mon Calamari", "mods": {"int": 2, "wis": 2, "con": -2}, "traits": ["Aquatic adaptation placeholder", "Automatic languages: Basic and Mon Calamarian"], "speed": 6, "languages": ["Basic", "Mon Calamarian"], "source": "SWSE Species Table", "traitEffects": []}, "mrlssi": {"name": "Mrlssi", "mods": {"int": 2, "cha": 2, "str": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "mustafarian": {"name": "Mustafarian", "mods": {"dex": 2, "int": 2, "str": -2}, "traits": ["Volcanic environment adaptation placeholder"], "speed": 6, "languages": ["Basic", "Mustafarian"], "variants": {"northern": {"name": "Northern Mustafarian", "mods": {"dex": 2, "int": 2, "str": -2}}, "southern": {"name": "Southern Mustafarian", "mods": {"str": 2, "dex": 2, "int": -2, "wis": -2}}}, "modsNote": "Choose Northern or Southern modifier set.", "traitEffects": []}, "muun": {"name": "Muun", "mods": {}, "traits": ["Banking culture placeholder"], "speed": 6, "languages": ["Basic", "Muun"], "traitEffects": []}, "nagai": {"name": "Nagai", "mods": {"dex": 2, "cha": 2, "con": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "nautolan": {"name": "Nautolan", "mods": {"con": 2, "int": -2, "wis": -2}, "traits": ["Aquatic sensory species placeholder"], "speed": 6, "languages": ["Basic", "Nautila"], "source": "SWSE Species Table", "traitEffects": []}, "nazren": {"name": "Nazren", "mods": {"str": 2, "con": 2, "dex": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "neimoidian": {"name": "Neimoidian", "mods": {"cha": 2, "str": -2}, "traits": ["Trade culture placeholder"], "speed": 6, "languages": ["Basic", "Neimoidian"], "source": "SWSE Species Table", "traitEffects": []}, "nelvaanian": {"name": "Nelvaanian", "mods": {"wis": 2, "int": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "nikto": {"name": "Nikto", "mods": {"str": 2, "int": -2, "cha": -2}, "traits": ["Hardy desert culture placeholder"], "speed": 6, "languages": ["Basic", "Nikto"], "source": "SWSE Species Table", "traitEffects": []}, "noghri": {"name": "Noghri", "mods": {"dex": 2, "wis": 2, "cha": -4}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "nosaurian": {"name": "Nosaurian", "mods": {"dex": 2, "cha": -2}, "traits": ["Reptilian species placeholder"], "speed": 6, "languages": ["Basic", "Nosaurian"], "source": "SWSE Species Table", "traitEffects": []}, "nyriaanan": {"name": "Nyriaanan", "mods": {"wis": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "oreenian": {"name": "O'reenian", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "palowick": {"name": "Pa'lowick", "mods": {"wis": 2, "str": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "pauan": {"name": "Pau'an", "mods": {"wis": 2, "cha": 2, "str": -2}, "traits": ["Long-lived Utapau culture placeholder"], "speed": 6, "languages": ["Basic", "Utapese"], "source": "SWSE Species Table", "traitEffects": []}, "phindian": {"name": "Phindian", "mods": {"int": 2, "cha": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Phindian"], "source": "SWSE Species Table", "traitEffects": []}, "polis_massan": {"name": "Polis Massan", "mods": {"wis": 2, "str": -2}, "traits": ["Expansion species placeholder"], "speed": 6, "languages": ["Basic", "Polis Massan"], "source": "SWSE Species Table", "traitEffects": []}, "quarren": {"name": "Quarren", "mods": {"con": 2, "wis": -2, "cha": -2}, "traits": ["Aquatic culture placeholder"], "speed": 6, "languages": ["Basic", "Quarrenese"], "source": "SWSE Species Table", "traitEffects": []}, "rakata": {"name": "Rakata", "mods": {"int": 2, "wis": -2}, "traits": ["Ancient Force empire placeholder"], "speed": 6, "languages": ["Rakata"], "source": "SWSE Species Table", "traitEffects": []}, "rattataki": {"name": "Rattataki", "mods": {}, "traits": ["Harsh warrior culture placeholder"], "speed": 6, "languages": ["Basic", "Rattataki"], "traitEffects": []}, "replica_droid": {"name": "Replica Droid", "mods": {"str": 2, "dex": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "republic_clone": {"name": "Republic Clone", "mods": {}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "modsNote": "Special; use Human-style base unless using clone template rules.", "source": "SWSE Species Table", "traitEffects": []}, "rodian": {"name": "Rodian", "mods": {"dex": 2, "wis": -2, "cha": -2}, "traits": ["Hunter instincts placeholder", "Automatic languages: Basic and Rodese"], "speed": 6, "languages": ["Basic", "Rodese"], "source": "SWSE Species Table", "traitEffects": []}, "ryn": {"name": "Ryn", "mods": {"cha": 2}, "traits": ["Nomadic musician culture placeholder"], "speed": 6, "languages": ["Basic", "Ryn"], "source": "SWSE Species Table", "traitEffects": []}, "sakiyan": {"name": "Sakiyan", "mods": {}, "traits": ["No ability modifiers (official)", "Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "selkath": {"name": "Selkath", "mods": {"cha": 2}, "traits": ["Aquatic healer culture placeholder"], "speed": 6, "languages": ["Basic", "Selkath"], "source": "SWSE Species Table", "traitEffects": []}, "shard": {"name": "Shard", "mods": {"wis": 2, "dex": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "shistavanen": {"name": "Shistavanen", "mods": {"dex": 2, "int": -2, "cha": -2}, "traits": ["Wolf-like hunter species placeholder"], "speed": 6, "languages": ["Basic", "Shistavanen"], "source": "SWSE Species Table", "traitEffects": []}, "sith_pureblood": {"name": "Sith Pureblood", "mods": {}, "traits": ["Ancient Sith lineage placeholder"], "speed": 6, "languages": ["Basic", "Sith"], "traitEffects": []}, "skakoan": {"name": "Skakoan", "mods": {"int": 2, "dex": -2}, "traits": ["Pressure suit culture placeholder"], "speed": 6, "languages": ["Basic", "Skakoan"], "source": "SWSE Species Table", "traitEffects": []}, "sluissi": {"name": "Sluissi", "mods": {"int": 2, "dex": -2}, "traits": ["Technical species placeholder"], "speed": 6, "languages": ["Basic", "Sluissese"], "source": "SWSE Species Table", "traitEffects": []}, "snivvian": {"name": "Snivvian", "mods": {"wis": 2}, "traits": ["Cold-world culture placeholder"], "speed": 6, "languages": ["Basic", "Snivvian"], "source": "SWSE Species Table", "traitEffects": []}, "sorcerer_of_rhand": {"name": "Sorcerer of Rhand", "mods": {"int": 4, "wis": 2, "str": -2, "dex": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "squib": {"name": "Squib", "mods": {"dex": 2, "str": -2}, "traits": ["Trader/scavenger culture placeholder"], "speed": 6, "languages": ["Basic", "Squibbian"], "source": "SWSE Species Table", "traitEffects": []}, "ssi_ruuk": {"name": "Ssi-Ruuk", "mods": {"str": 2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "stereb": {"name": "Stereb", "mods": {"str": 4, "con": 2, "dex": -2, "int": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "sullustan": {"name": "Sullustan", "mods": {"dex": 2, "con": -2}, "traits": ["Underground navigation placeholder", "Automatic languages: Basic and Sullustese"], "speed": 6, "languages": ["Basic", "Sullustese"], "source": "SWSE Species Table", "traitEffects": []}, "talz": {"name": "Talz", "mods": {"con": 2, "int": -2}, "traits": ["Cold-world species placeholder"], "speed": 6, "languages": ["Talzzi"], "source": "SWSE Species Table", "traitEffects": []}, "taung": {"name": "Taung", "mods": {"con": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "thakwaash": {"name": "Thakwaash", "mods": {"str": 4, "dex": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "tof": {"name": "Tof", "mods": {"str": 2, "cha": 2, "dex": -2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "togorian": {"name": "Togorian", "mods": {"str": 4, "int": -2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "togruta": {"name": "Togruta", "mods": {"dex": 2, "con": -2}, "traits": ["Pack awareness placeholder"], "speed": 6, "languages": ["Basic", "Togruti"], "source": "SWSE Species Table", "traitEffects": []}, "toydarian": {"name": "Toydarian", "mods": {"wis": 2, "str": -2}, "traits": ["Winged trader species placeholder"], "speed": 6, "languages": ["Basic", "Toydarian"], "source": "SWSE Species Table", "traitEffects": []}, "trandoshan": {"name": "Trandoshan", "mods": {"str": 2, "dex": -2}, "traits": ["Natural weapons/regeneration-style traits pending detailed coding", "Automatic languages: Basic and Dosh"], "speed": 6, "languages": ["Basic", "Dosh"], "source": "SWSE Species Table", "traitEffects": []}, "trianii": {"name": "Trianii", "mods": {"wis": 2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "tusken_raider": {"name": "Tusken Raider", "mods": {"con": 2, "int": -2, "wis": -2}, "traits": ["Desert nomad culture placeholder"], "speed": 6, "languages": ["Tusken"], "source": "SWSE Species Table", "traitEffects": []}, "twilek": {"name": "Twi'lek", "mods": {"cha": 2, "wis": -2}, "traits": ["Social adaptability placeholder", "Automatic languages: Basic and Twi’leki"], "speed": 6, "languages": ["Basic", "Twi’leki"], "source": "SWSE Species Table", "traitEffects": []}, "ubese": {"name": "Ubese", "mods": {"dex": 2, "con": -2}, "traits": ["Masked survivalist culture placeholder"], "speed": 6, "languages": ["Ubese"], "source": "SWSE Species Table", "traitEffects": []}, "umbaran": {"name": "Umbaran", "mods": {"dex": 2, "wis": 2, "con": -2}, "traits": ["Shadow-world culture placeholder"], "speed": 6, "languages": ["Basic", "Umbarese"], "source": "SWSE Species Table", "traitEffects": []}, "utai": {"name": "Utai", "mods": {"con": 2, "cha": -2}, "traits": ["Utapau worker culture placeholder"], "speed": 6, "languages": ["Basic", "Utapese"], "source": "SWSE Species Table", "traitEffects": []}, "vagaari": {"name": "Vagaari", "mods": {"str": 2, "wis": -2}, "traits": ["Unknown Regions raider culture placeholder"], "speed": 6, "languages": ["Vagaari"], "source": "SWSE Species Table", "traitEffects": []}, "vahla": {"name": "Vahla", "mods": {"int": 2, "con": -2}, "traits": ["Force tradition placeholder"], "speed": 6, "languages": ["Basic", "Vahla"], "source": "SWSE Species Table", "traitEffects": []}, "verpine": {"name": "Verpine", "mods": {}, "traits": ["Technical aptitude and sensory traits pending detailed coding", "No ability modifiers (official)", "Automatic languages: Basic and Verpine"], "speed": 6, "languages": ["Basic", "Verpine"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": []}, "vultan": {"name": "Vultan", "mods": {"int": 2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "vurk": {"name": "Vurk", "mods": {"con": 2, "cha": 2, "dex": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "weequay": {"name": "Weequay", "mods": {"con": 2, "int": -2, "cha": -2}, "traits": ["Clan culture placeholder"], "speed": 6, "languages": ["Basic", "Sriluurian"], "source": "SWSE Species Table", "traitEffects": []}, "whiphid": {"name": "Whiphid", "mods": {"str": 4, "int": -2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "wookiee": {"name": "Wookiee", "mods": {"str": 4, "con": 2, "dex": -2, "wis": -2, "cha": -2}, "traits": ["Expert Climber: may Take 10 on Climb even under pressure", "Extraordinary Recuperation: double natural healing rate", "Intimidating Presence: reroll Persuasion checks to intimidate, must keep second result", "Rage 1/day: Swift Action; +2 melee attack and damage while raging; duration 5 + CON mod rounds; moves -1 persistent step after", "Weapon Familiarity: Bowcaster and Ryyk blade familiarity", "Automatic languages: Shyriiwook; understands Basic"], "speed": 6, "languages": ["Shyriiwook", "Understands Basic"], "source": "SWSE Species Table", "traitEffects": [{"type": "take10", "skill": "climb", "label": "Expert Climber"}, {"type": "reroll", "skill": "persuasion", "label": "Intimidating Presence: intimidate only"}, {"type": "ability", "label": "Rage", "attackBonus": 2, "damageBonus": 2, "duration": "5 + CON modifier rounds"}]}, "wroonian": {"name": "Wroonian", "mods": {"dex": 2, "con": -2}, "traits": ["Adventurous blue-skinned species placeholder"], "speed": 6, "languages": ["Basic", "Wroonian"], "source": "SWSE Species Table", "traitEffects": []}, "yarkora": {"name": "Yarkora", "mods": {"wis": 2, "cha": 2, "dex": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "yevetha": {"name": "Yevetha", "mods": {"str": 2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "yuuzhan_vong": {"name": "Yuuzhan Vong", "mods": {"str": 2, "wis": -2}, "traits": ["Force-absent invader culture placeholder"], "speed": 6, "languages": ["Yuuzhan Vong"], "source": "SWSE Species Table", "traitEffects": []}, "yuzzem": {"name": "Yuzzem", "mods": {"str": 4, "wis": -2, "cha": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "zabrak": {"name": "Zabrak", "mods": {}, "traits": ["No ability modifiers (official)", "Heightened Awareness: reroll Perception, must keep second result", "Superior Defenses: +1 species bonus to Reflex, Fortitude, and Will", "Automatic languages: Basic and Zabrak"], "speed": 6, "languages": ["Basic", "Zabrak"], "source": "SWSE Species Table", "modsNote": "No ability modifiers (official).", "traitEffects": [{"type": "defense_bonus", "defense": "all", "amount": 1}, {"type": "reroll", "skill": "perception", "label": "Heightened Awareness"}]}, "zeltron": {"name": "Zeltron", "mods": {"cha": 2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}, "zygerrian": {"name": "Zygerrian", "mods": {"con": 2, "wis": -2}, "traits": ["Species traits placeholder"], "speed": 6, "languages": ["Basic"], "source": "SWSE Species Table", "traitEffects": []}};
 
@@ -3462,9 +3467,11 @@ const talents=[{"id":"tal_jedi_agent_of_ossus_ancient_archive","name":"Ancient A
 const forcePowers=[{"id":"fp_battle_strike","name":"Battle Strike","source":"Saga Edition Core Rulebook","types":[],"action":"Swift Action","summary":"Enhance your next attack with Force-guided accuracy and impact.","form":"","req":{}},{"id":"fp_dark_rage","name":"Dark Rage","source":"Saga Edition Core Rulebook","types":["Dark Side"],"action":"Swift Action","summary":"Channel fury to strengthen melee aggression for a short burst.","form":"","req":{}},{"id":"fp_farseeing","name":"Farseeing","source":"Saga Edition Core Rulebook","types":[],"action":"Full-Round Action","summary":"Reach through the Force to sense a distant person, place, or possibility.","form":"","req":{}},{"id":"fp_force_disarm","name":"Force Disarm","source":"Saga Edition Core Rulebook","types":["Telekinetic"],"action":"Standard Action","summary":"Use telekinesis to rip or knock a weapon away from a target.","form":"","req":{}},{"id":"fp_force_grip","name":"Force Grip","source":"Saga Edition Core Rulebook","types":["Telekinetic"],"action":"Standard Action","summary":"Crush or choke a target with invisible telekinetic pressure.","form":"","req":{}},{"id":"fp_force_lightning","name":"Force Lightning","source":"Saga Edition Core Rulebook","types":["Dark Side"],"action":"Standard Action","summary":"Blast a target with destructive dark side lightning.","form":"","req":{}},{"id":"fp_force_slam","name":"Force Slam","source":"Saga Edition Core Rulebook","types":["Telekinetic"],"action":"Standard Action","summary":"Hammer an area or group with concussive telekinetic force.","form":"","req":{}},{"id":"fp_force_stun","name":"Force Stun","source":"Saga Edition Core Rulebook","types":[],"action":"Standard Action","summary":"Overwhelm a target and push them down the condition track.","form":"","req":{}},{"id":"fp_force_thrust","name":"Force Thrust","source":"Saga Edition Core Rulebook","types":["Telekinetic"],"action":"Standard Action","summary":"Push a target away with a sudden burst of Force energy.","form":"","req":{}},{"id":"fp_mind_trick","name":"Mind Trick","source":"Saga Edition Core Rulebook","types":["Mind-Affecting"],"action":"Standard Action","summary":"Bend a target’s thoughts, perceptions, or choices through the Force.","form":"","req":{}},{"id":"fp_move_object","name":"Move Object","source":"Saga Edition Core Rulebook","types":["Telekinetic"],"action":"Standard Action","summary":"Lift, move, hurl, or manipulate a creature or object with the Force.","form":"","req":{}},{"id":"fp_negate_energy","name":"Negate Energy","source":"Saga Edition Core Rulebook","types":[],"action":"Reaction","summary":"Dissipate or blunt an incoming energy attack.","form":"","req":{}},{"id":"fp_rebuke","name":"Rebuke","source":"Saga Edition Core Rulebook","types":[],"action":"Reaction","summary":"Answer an incoming Force power with a defensive Force counter.","form":"","req":{}},{"id":"fp_sever_force","name":"Sever Force","source":"Saga Edition Core Rulebook","types":["Light Side"],"action":"Standard Action","summary":"Temporarily cut off or suppress another Force-user’s access to the Force.","form":"","req":{}},{"id":"fp_surge","name":"Surge","source":"Saga Edition Core Rulebook","types":[],"action":"Free Action","summary":"Boost movement and jumping with a sudden Force-assisted burst.","form":"","req":{}},{"id":"fp_vital_transfer","name":"Vital Transfer","source":"Saga Edition Core Rulebook","types":["Light Side"],"action":"Standard Action","summary":"Transfer vitality through the Force to heal another creature.","form":"","req":{}},{"id":"fp_energy_resistance","name":"Energy Resistance","source":"Knights of the Old Republic Campaign Guide","types":[],"action":"Standard Action","summary":"Protect yourself from common energy and environmental damage types.","form":"","req":{}},{"id":"fp_fear","name":"Fear","source":"Knights of the Old Republic Campaign Guide","types":["Dark Side","Mind-Affecting"],"action":"Swift Action","summary":"Project dark side terror into enemies.","form":"","req":{}},{"id":"fp_force_scream","name":"Force Scream","source":"Knights of the Old Republic Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Release a Force-amplified sonic scream.","form":"","req":{}},{"id":"fp_force_whirlwind","name":"Force Whirlwind","source":"Knights of the Old Republic Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Trap a target in a spinning telekinetic vortex.","form":"","req":{}},{"id":"fp_ionize","name":"Ionize","source":"Knights of the Old Republic Campaign Guide","types":[],"action":"Standard Action","summary":"Overload droids, electronics, or powered systems.","form":"","req":{}},{"id":"fp_kinetic_combat","name":"Kinetic Combat","source":"Knights of the Old Republic Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Animate a weapon through the Force so it fights away from your hand.","form":"","req":{}},{"id":"fp_resist_force","name":"Resist Force","source":"Knights of the Old Republic Campaign Guide","types":[],"action":"Standard Action","summary":"Bolster yourself against hostile Force powers.","form":"","req":{}},{"id":"fp_slow","name":"Slow","source":"Knights of the Old Republic Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Hinder a target’s movement as if weighed down.","form":"","req":{}},{"id":"fp_valor","name":"Valor","source":"Knights of the Old Republic Campaign Guide","types":["Light Side"],"action":"Standard Action","summary":"Share strength and courage with an ally through the Force.","form":"","req":{}},{"id":"fp_wound","name":"Wound","source":"Knights of the Old Republic Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Injure a living target with painful dark side pressure.","form":"","req":{}},{"id":"fp_corruption","name":"Corruption","source":"The Force Unleashed Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Inflict dark side corruption as an offensive Force attack.","form":"","req":{}},{"id":"fp_force_blast","name":"Force Blast","source":"The Force Unleashed Campaign Guide","types":[],"action":"Standard Action","summary":"Throw compressed air, debris, or concussive Force energy at enemies.","form":"","req":{}},{"id":"fp_force_shield","name":"Force Shield","source":"The Force Unleashed Campaign Guide","types":["Telekinetic"],"action":"Reaction","summary":"Raise a temporary telekinetic barrier against harm.","form":"","req":{}},{"id":"fp_force_storm_fucg","name":"Force Storm (FUCG)","source":"The Force Unleashed Campaign Guide","types":["Dark Side","Telekinetic"],"action":"Standard Action","summary":"Create a violent storm of dark telekinetic energy around yourself.","form":"","req":{}},{"id":"fp_repulse","name":"Repulse","source":"The Force Unleashed Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Blast nearby enemies and objects away from you.","form":"","req":{}},{"id":"fp_cloak","name":"Cloak","source":"The Clone Wars Campaign Guide","types":[],"action":"Standard Action","summary":"Bend light and perception to hide your presence.","form":"","req":{}},{"id":"fp_levitate","name":"Levitate","source":"The Clone Wars Campaign Guide","types":["Telekinetic"],"action":"Move Action","summary":"Float upward or downward through controlled telekinesis.","form":"","req":{}},{"id":"fp_malacia","name":"Malacia","source":"The Clone Wars Campaign Guide","types":["Light Side"],"action":"Standard Action","summary":"Disrupt a target’s equilibrium and induce sickness or dizziness.","form":"","req":{}},{"id":"fp_morichro","name":"Morichro","source":"The Clone Wars Campaign Guide","types":[],"action":"Standard Action","summary":"Slow a target’s life functions into a dangerous trance-like state.","form":"","req":{}},{"id":"fp_phase","name":"Phase","source":"The Clone Wars Campaign Guide","types":[],"action":"Move Action","summary":"Briefly pass through solid matter.","form":"","req":{}},{"id":"fp_rend","name":"Rend","source":"The Clone Wars Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Pull a creature or object in opposing directions with violent Force power.","form":"","req":{}},{"id":"fp_shatterpoint","name":"Shatterpoint","source":"The Clone Wars Campaign Guide","types":[],"action":"Swift Action","summary":"Sense a target’s critical weakness or point of fracture.","form":"","req":{}},{"id":"fp_technometry","name":"Technometry","source":"The Clone Wars Campaign Guide","types":[],"action":"Standard Action","summary":"Read or influence technological devices through the Force.","form":"","req":{}},{"id":"fp_ballistakinesis","name":"Ballistakinesis","source":"Legacy Era Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Spray an area with telekinetically propelled debris.","form":"","req":{}},{"id":"fp_combustion","name":"Combustion","source":"Legacy Era Campaign Guide","types":[],"action":"Standard Action","summary":"Agitate particles to produce a sudden pyrokinetic burst.","form":"","req":{}},{"id":"fp_dark_transfer","name":"Dark Transfer","source":"Legacy Era Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Use dark side energy to restore vitality with dangerous consequences.","form":"","req":{}},{"id":"fp_detonate","name":"Detonate","source":"Legacy Era Campaign Guide","types":["Telekinetic"],"action":"Standard Action","summary":"Exploit a weak point and shatter a vulnerable object.","form":"","req":{}},{"id":"fp_enlighten","name":"Enlighten","source":"Legacy Era Campaign Guide","types":["Light Side","Mind-Affecting"],"action":"Reaction or Swift Action","summary":"Share a glimpse of the future to guide or protect an ally.","form":"","req":{}},{"id":"fp_lightning_burst","name":"Lightning Burst","source":"Legacy Era Campaign Guide","types":["Dark Side"],"action":"Standard Action","summary":"Arc dark lightning from your body into adjacent enemies.","form":"","req":{}},{"id":"fp_obscure","name":"Obscure","source":"Legacy Era Campaign Guide","types":["Mind-Affecting"],"action":"Reaction","summary":"Cloud an enemy’s perception and interfere with their target choice.","form":"","req":{}},{"id":"fp_prescience","name":"Prescience","source":"Legacy Era Campaign Guide","types":[],"action":"Swift Action","summary":"Gain a sudden flash of insight before acting.","form":"","req":{}},{"id":"fp_stagger","name":"Stagger","source":"Legacy Era Campaign Guide","types":["Telekinetic"],"action":"Swift Action","summary":"Lash nearby foes with enough Force to make them stumble.","form":"","req":{}},{"id":"fp_blind","name":"Blind","source":"Jedi Academy Training Manual","types":["Telekinetic"],"action":"Swift Action","summary":"Throw debris or dust with the Force to interfere with sight.","form":"","req":{}},{"id":"fp_convection","name":"Convection","source":"Jedi Academy Training Manual","types":[],"action":"Swift Action","summary":"Superheat your body with the Force for close-quarters danger.","form":"","req":{}},{"id":"fp_crucitorn","name":"Crucitorn","source":"Jedi Academy Training Manual","types":[],"action":"Reaction","summary":"Push through pain and trauma using Force discipline.","form":"","req":{}},{"id":"fp_cryokinesis","name":"Cryokinesis","source":"Jedi Academy Training Manual","types":[],"action":"Standard Action","summary":"Drain heat from a target and rapidly chill it.","form":"","req":{}},{"id":"fp_drain_energy","name":"Drain Energy","source":"Jedi Academy Training Manual","types":[],"action":"Standard Action","summary":"Draw energy from a powered device, weapon pack, or generator.","form":"","req":{}},{"id":"fp_fold_space","name":"Fold Space","source":"Jedi Academy Training Manual","types":[],"action":"Full-Round Action","summary":"Bend space to relocate an object almost instantly.","form":"","req":{}},{"id":"fp_force_light","name":"Force Light","source":"Jedi Academy Training Manual","types":["Light Side"],"action":"Standard Action","summary":"Radiate purifying light side power against dark side taint.","form":"","req":{}},{"id":"fp_force_storm_jatm","name":"Force Storm","source":"Jedi Academy Training Manual","types":["Dark Side"],"action":"Standard Action","summary":"Focus malicious dark side energy into a storm in a chosen area.","form":"","req":{}},{"id":"fp_force_track","name":"Force Track","source":"Jedi Academy Training Manual","types":[],"action":"Swift Action","summary":"Follow a quarry’s trail through the Force.","form":"","req":{}},{"id":"fp_hatred","name":"Hatred","source":"Jedi Academy Training Manual","types":["Dark Side"],"action":"Standard Action","summary":"Let hatred radiate outward as a dark side assault.","form":"","req":{}},{"id":"fp_inertia","name":"Inertia","source":"Jedi Academy Training Manual","types":[],"action":"Move Action","summary":"Shift your inertia to perform impossible movement stunts.","form":"","req":{}},{"id":"fp_inspire","name":"Inspire","source":"Jedi Academy Training Manual","types":["Light Side"],"action":"Swift Action","summary":"Fill allies with courage and resolve.","form":"","req":{}},{"id":"fp_intercept","name":"Intercept","source":"Jedi Academy Training Manual","types":["Telekinetic"],"action":"Reaction","summary":"Hurl or move a small object into the path of an incoming projectile.","form":"","req":{}},{"id":"fp_memory_walk","name":"Memory Walk","source":"Jedi Academy Training Manual","types":["Dark Side","Mind-Affecting"],"action":"Standard Action","summary":"Torment a target with traumatic memories.","form":"","req":{}},{"id":"fp_mind_shard","name":"Mind Shard","source":"Jedi Academy Training Manual","types":["Mind-Affecting"],"action":"Standard Action","summary":"Splinter a target’s mind with painful psychic force.","form":"","req":{}},{"id":"fp_plant_surge","name":"Plant Surge","source":"Jedi Academy Training Manual","types":[],"action":"Standard Action","summary":"Command nearby plants to lash out or interfere.","form":"","req":{}},{"id":"fp_thought_bomb","name":"Thought Bomb","source":"Jedi Academy Training Manual","types":["Mind-Affecting"],"action":"Standard Action","summary":"Emit harmful telepathic waves around you.","form":"","req":{}},{"id":"fp_assured_strike","name":"Assured Strike","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Trade raw power for precision.","form":"Juyo","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_barrier_of_blades","name":"Barrier of Blades","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Swift Action","summary":"Create a defensive lightsaber barrier against incoming fire.","form":"Shien","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_circle_of_shelter","name":"Circle of Shelter","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Protect an area around yourself and allies.","form":"Soresu","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_contentious_opportunity","name":"Contentious Opportunity","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Free Action","summary":"Exploit an opening created by an enemy.","form":"Makashi","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_deflecting_slash","name":"Deflecting Slash","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Reaction","summary":"Follow a successful defense with a nearby slash.","form":"Soresu","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_disarming_slash","name":"Disarming Slash","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Strike at an enemy’s weapon to disarm them.","form":"Shii-Cho","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_draw_closer","name":"Draw Closer","source":"Jedi Academy Training Manual","types":["Telekinetic","Lightsaber Form"],"action":"Standard Action","summary":"Pull an enemy toward your lightsaber strike.","form":"Niman","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_falling_avalanche","name":"Falling Avalanche","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Deliver a heavy overhead lightsaber blow.","form":"Djem So","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_fluid_riposte","name":"Fluid Riposte","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Reaction","summary":"Turn aside a melee attack and answer with a counter.","form":"Djem So","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_hawk_bat_swoop","name":"Hawk-Bat Swoop","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Leap into a sudden acrobatic attack.","form":"Ataru","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_high_ground_defense","name":"High Ground Defense","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Swift Action","summary":"Use superior position and terrain for defense.","form":"Sokan","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_makashi_riposte","name":"Makashi Riposte","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Reaction","summary":"Angle away a melee attack and retaliate.","form":"Makashi","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_pass_the_blade","name":"Pass the Blade","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Use blade deactivation/reactivation as an attack trick.","form":"Trakata","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_pushing_slash","name":"Pushing Slash","source":"Jedi Academy Training Manual","types":["Telekinetic","Lightsaber Form"],"action":"Standard Action","summary":"Slash and shove the target away with the Force.","form":"Niman","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_rising_whirlwind","name":"Rising Whirlwind","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Attack in a bright dual-blade whirlwind.","form":"Jar’Kai","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_saber_swarm","name":"Saber Swarm","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Strike with many fast short cuts.","form":"Ataru","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_sarlacc_sweep","name":"Sarlacc Sweep","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Make a sweeping attack against multiple foes.","form":"Shii-Cho","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_shien_deflection","name":"Shien Deflection","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Reaction","summary":"Deflect and leap toward the attacker.","form":"Shien","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_swift_flank","name":"Swift Flank","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Move around an enemy to strike from an unexpected angle.","form":"Vaapad","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_tempered_aggression","name":"Tempered Aggression","source":"Jedi Academy Training Manual","types":["Dark Side","Lightsaber Form"],"action":"Standard Action","summary":"Attack with controlled aggression while flirting with the dark side.","form":"Vaapad","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_twin_strike","name":"Twin Strike","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Drive both blades into a single target.","form":"Jar’Kai","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_unbalancing_block","name":"Unbalancing Block","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Reaction","summary":"Catch and destabilize an enemy with a tricky blade defense.","form":"Trakata","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_unhindered_charge","name":"Unhindered Charge","source":"Jedi Academy Training Manual","types":["Lightsaber Form"],"action":"Standard Action","summary":"Charge through bad terrain and obstacles.","form":"Sokan","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_vornskr_s_ferocity","name":"Vornskr’s Ferocity","source":"Jedi Academy Training Manual","types":["Dark Side","Lightsaber Form"],"action":"Standard Action","summary":"Commit to a ferocious Juyo assault.","form":"Juyo","req":{"feat":"feat_weapon_lightsaber"}},{"id":"fp_battlemind","name":"Battlemind","source":"Complete Force Powers Index","types":[],"action":"Move Action","summary":"Improve your attack focus through battle meditation on yourself.","form":"","req":{}},{"id":"fp_call_swarm","name":"Call Swarm","source":"Expanded Force Power Index","types":["Mind-Affecting"],"action":"Standard Action","summary":"Use the Force to direct or call a swarm-like threat.","form":"","req":{}},{"id":"fp_chant_of_resurrection","name":"Chant of Resurrection","source":"Expanded Force Power Index","types":["Dark Side"],"action":"Full-Round Action","summary":"Forbidden dark side rite associated with restoring or animating the dead.","form":"","req":{}},{"id":"fp_concentration","name":"Concentration","source":"Expanded Force Power Index","types":["Light Side"],"action":"Swift Action","summary":"Center your mind through light side focus.","form":"","req":{}},{"id":"fp_deadly_sight","name":"Deadly Sight","source":"Expanded Force Power Index","types":["Dark Side"],"action":"Standard Action","summary":"Turn a lethal dark side gaze on a target.","form":"","req":{}},{"id":"fp_destruction","name":"Destruction","source":"Expanded Force Power Index","types":["Dark Side"],"action":"Standard Action","summary":"Unleash raw dark side destructive force.","form":"","req":{}},{"id":"fp_extra_move_object_dcs","name":"Extra Move Object DCs","source":"Expanded Force Power Index","types":["Telekinetic"],"action":"Special","summary":"Reference helper for expanded Move Object difficulty handling.","form":"","req":{}},{"id":"fp_force_stasis","name":"Force Stasis","source":"Expanded Force Power Index","types":["Telekinetic"],"action":"Standard Action","summary":"Hold a target suspended or immobilized through telekinesis.","form":"","req":{}},{"id":"fp_gaze_of_darkness","name":"Gaze of Darkness","source":"Expanded Force Power Index","types":["Dark Side","Mind-Affecting"],"action":"Standard Action","summary":"Attack or unsettle a target through a dark side gaze.","form":"","req":{}},{"id":"fp_inflict_pain","name":"Inflict Pain","source":"Expanded Force Power Index","types":["Dark Side"],"action":"Standard Action","summary":"Cause severe pain through the dark side.","form":"","req":{}},{"id":"fp_instill_turmoil","name":"Instill Turmoil","source":"Expanded Force Power Index","types":["Mind-Affecting"],"action":"Standard Action","summary":"Flood a target with emotional chaos.","form":"","req":{}},{"id":"fp_rearrangement","name":"Rearrangement","source":"Expanded Force Power Index","types":["Telekinetic"],"action":"Standard Action","summary":"Reposition objects or targets through telekinetic manipulation.","form":"","req":{}},{"id":"fp_siphon_life","name":"Siphon Life","source":"Expanded Force Power Index","types":["Dark Side"],"action":"Standard Action","summary":"Drain vitality from a living target.","form":"","req":{}},{"id":"fp_sith_curse","name":"Sith Curse","source":"Expanded Force Power Index","types":["Dark Side","Mind-Affecting"],"action":"Standard Action","summary":"Lay a dark side curse on an enemy.","form":"","req":{}},{"id":"fp_sith_word","name":"Sith Word","source":"Expanded Force Power Index","types":["Dark Side","Mind-Affecting"],"action":"Standard Action","summary":"Speak a word of dark side power.","form":"","req":{}}];
 const forcePowerSources=['All',...new Set(forcePowers.map(p=>p.source))];
 const forcePowerTypes=['All',...new Set(forcePowers.flatMap(p=>p.types.length?p.types:['N/A']))];
-let char={name:"Cin'Bedil",ruleset:"Saga Edition",era:"Old Republic",alignment:"Dark Side",species:"twilek",level:1,classId:"jedi",portrait:null,abilities:{str:12,dex:16,con:12,int:14,wis:12,cha:14},trainedSkills:["use_the_force","initiative"],selectedFeats:["feat_force_sensitivity","feat_weapon_lightsaber"],selectedTalents:["tal_block"],forceTrainingRanks:0,selectedForcePowers:[],usedForcePowers:[],darkSideScore:0,credits:1000,xp:0,destiny:1,languages:["Basic","Twi'leki"],equipment:{weapons:["Training lightsaber"],armor:[],gear:["Comlink","Datapad"]},background:""};
+const SWC_DEFAULT_CHARACTER={name:"Cin'Bedil",ruleset:"Saga Edition",era:"Old Republic",alignment:"Dark Side",species:"twilek",level:1,classId:"jedi",portrait:null,abilities:{str:12,dex:16,con:12,int:14,wis:12,cha:14},trainedSkills:["use_the_force","initiative"],selectedFeats:["feat_force_sensitivity","feat_weapon_lightsaber"],selectedTalents:["tal_block"],forceTrainingRanks:0,selectedForcePowers:[],usedForcePowers:[],darkSideScore:0,credits:1000,xp:0,destiny:1,languages:["Basic","Twi'leki"],equipment:{weapons:["Training lightsaber"],armor:[],gear:["Comlink","Datapad"]},background:""};
+let char=JSON.parse(JSON.stringify(SWC_DEFAULT_CHARACTER));
 try{const saved=localStorage.getItem(STORAGE_KEY);if(saved) char=Object.assign(char,JSON.parse(saved));}catch(e){}
 let charStep=1, mode='in', sceneOpen=false, speciesSearch="", sourceFilter="All", featQuery="", featCat="All", featAvailable=false, talentTree="All", talentQuery="", talentAvailable=false, equipSearch="", equipShopCat="All", forceSearch="", forceSource="All", forceType="All", forceAvailable=false, forceSelectedOnly=false;
+swcBootstrapLibraries();
 
 function oldRepublicMode(){return char.ruleset==="Old Republic Campaign Rules"}
 function currentClassData(){return oldRepublicMode()?oldRepublicClasses:classData}
@@ -4141,9 +4148,9 @@ function equipmentBuilderHtml(){
   return `<div class="equipment-layout"><div class="credit-banner"><span>Credits Remaining</span><strong>${char.credits}</strong></div>${equipmentCombatSnapshotHtml()}${starterPackageHtml()}${equipmentOwnedHtml(true)}${equipmentShopHtml()}</div>`
 }
 
-function saveChar(){localStorage.setItem(STORAGE_KEY,JSON.stringify(char));alert("Character saved locally.");}
+function saveChar(){localStorage.setItem(STORAGE_KEY,JSON.stringify(char));swcUpsertCurrentCharacter();alert("Character saved locally.");}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);renderAll()}
-function openCampaign(){showScreen('campaign')} function startCharacter(){charStep=1;showScreen('characterWizard');renderCharStep()} function quickStartCampaign(){openCampaign()} function generateQuestions(){document.getElementById('questionLoad').style.display='block';document.getElementById('questionPanel').style.display='none';setTimeout(()=>{document.getElementById('questionLoad').style.display='none';document.getElementById('questionPanel').style.display='block';document.getElementById('questionPanel').scrollIntoView({behavior:'smooth',block:'center'})},600)}
+function openCampaign(){showScreen('campaign')} function startCharacter(){swcStartNewCharacter()} function quickStartCampaign(){swcCreateCampaignFromWizard();openCampaign()} function generateQuestions(){document.getElementById('questionLoad').style.display='block';document.getElementById('questionPanel').style.display='none';setTimeout(()=>{document.getElementById('questionLoad').style.display='none';document.getElementById('questionPanel').style.display='block';document.getElementById('questionPanel').scrollIntoView({behavior:'smooth',block:'center'})},600)}
 function selectSpecies(id){
   if(!speciesData[id]) return;
   char.species=id;
@@ -4153,10 +4160,10 @@ function selectSpecies(id){
   renderCharStep();
   renderAll();
 }
-function saveSilent(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(char));}catch(e){}}
+function saveSilent(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(char));swcUpsertCurrentCharacter({silent:true});}catch(e){}}
 
 function clamp(n,min,max){return Math.max(min,Math.min(max,Number(n)||0))}
-function saveCharSilent(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(char))}catch(e){}}
+function saveCharSilent(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(char));swcUpsertCurrentCharacter({silent:true})}catch(e){}}
 function ensureSheetState(){
   if(!Array.isArray(char.rollHistory)) char.rollHistory=[];
   let mh=maxHp(), mf=maxFp();
@@ -4266,6 +4273,181 @@ function sheetKnownForcePowersHtml(){
   return `<div class="force-pool-banner"><h3>Saga Force Suite</h3><p>Force Points: <b>${char.currentFp}/${maxFp()}</b> · Suite Size: <b>${list.length}/${forcePowerSlots()}</b> · Dark Side Score: <b>${char.darkSideScore||0}</b></p><div class="roll-row-actions"><button class="roll-btn blue" onclick="rollSkillCheck('use_the_force')">Use the Force 🎲</button><button class="roll-btn" onclick="resetForceSuite()">Reset Suite</button><button class="roll-btn" onclick="char.currentFp=maxFp();saveCharSilent();renderAll()">Recover FP</button></div></div>${list.length?list.map(p=>{let used=forcePowerUsed(p.id);return `<div class="library-card"><div><h3>${p.name} ${used?'<span class="badge bad">Spent</span>':'<span class="badge good">Ready</span>'}</h3><p>${p.summary}</p><div class="pill-row"><span class="badge">${p.action}</span><span class="badge">${p.source}</span>${forcePowerDescriptorBadges(p)}</div><div class="force-card-actions"><button class="roll-btn blue" onclick="rollSkillCheck('use_the_force')">Roll Activation 🎲</button><button class="roll-btn ${used?'':'bad'}" onclick="${used?`readyForcePower('${p.id}')`:`useForcePower('${p.id}')`}">${used?'Ready Power':'Use Power'}</button></div></div></div>`}).join(''):'<div class="sheet-section-card"><p class="note">No Saga Force powers selected yet.</p></div>'}`;
 }
 
+
+/* --- Character + Campaign Library Delete Tools v1.8.9.1 --- */
+function swcClone(obj){return JSON.parse(JSON.stringify(obj||{}))}
+function swcNewId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(16).slice(2)}
+function swcSlugLocal(text,prefix='id'){return String(text||prefix).toLowerCase().trim().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,48)||prefix}
+function swcSafeRead(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')||fallback}catch(e){return fallback}}
+function swcSafeWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){console.warn('Could not save',key,e)}}
+function swcCharacterSummary(c){
+  c=c||{};
+  let s=speciesData[c.species]?.name||c.species||'Unknown Species';
+  let classes=c.ruleset==='Old Republic Campaign Rules'?oldRepublicClasses:classData;
+  let cn=classes[c.classId]?.name||classData[c.classId]?.name||oldRepublicClasses[c.classId]?.name||c.classId||'Unknown Class';
+  return `Lvl ${Number(c.level)||1} · ${s} ${cn}`;
+}
+function swcEnsureCurrentCharacterId(){
+  if(!char.id)char.id=localStorage.getItem(ACTIVE_CHARACTER_ID_KEY)||swcNewId('char');
+  localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);
+  return char.id;
+}
+function swcGetCharacters(){let list=swcSafeRead(CHARACTER_LIBRARY_KEY,[]);return Array.isArray(list)?list:[]}
+function swcSetCharacters(list){swcSafeWrite(CHARACTER_LIBRARY_KEY,Array.isArray(list)?list:[])}
+function swcUpsertCurrentCharacter(opts={}){
+  try{
+    swcEnsureCurrentCharacterId();
+    let list=swcGetCharacters();
+    let idx=list.findIndex(c=>c&&c.id===char.id);
+    let snap=swcClone(char);
+    snap.updated=Date.now();
+    if(!snap.created)snap.created=idx>=0?list[idx].created:Date.now();
+    if(idx>=0)list[idx]=Object.assign({},list[idx],snap);else list.unshift(snap);
+    swcSetCharacters(list);
+    localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);
+  }catch(e){if(!opts.silent)console.warn('Character library save failed',e)}
+}
+function swcLoadCharacter(id){
+  let found=swcGetCharacters().find(c=>c.id===id);
+  if(!found)return alert('That character was not found. The archive gremlin ate the datapad.');
+  char=swcClone(found);
+  localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(char));
+  showScreen('characterSheet');
+  renderAll();
+}
+function swcDeleteCharacter(id){
+  let list=swcGetCharacters();
+  let target=list.find(c=>c.id===id);
+  if(!target)return;
+  if(!confirm(`Delete character "${target.name||'Unnamed Character'}" from this browser? This cannot be undone.`))return;
+  list=list.filter(c=>c.id!==id);
+  if(!list.length){
+    char=swcClone(SWC_DEFAULT_CHARACTER);
+    char.id=swcNewId('char');
+    char.created=Date.now();
+    char.updated=Date.now();
+    list=[swcClone(char)];
+  }else if(char.id===id){
+    char=swcClone(list[0]);
+  }
+  swcSetCharacters(list);
+  localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(char));
+  renderAll();
+}
+function swcStartNewCharacter(){
+  swcUpsertCurrentCharacter({silent:true});
+  char=swcClone(SWC_DEFAULT_CHARACTER);
+  char.name='New Character';
+  char.id=swcNewId('char');
+  char.created=Date.now();
+  char.updated=Date.now();
+  localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(char));
+  swcUpsertCurrentCharacter({silent:true});
+  charStep=1;
+  showScreen('characterWizard');
+  renderCharStep();
+}
+function swcGetCampaigns(){let list=swcSafeRead(CAMPAIGN_LIBRARY_KEY,[]);return Array.isArray(list)?list:[]}
+function swcSetCampaigns(list){swcSafeWrite(CAMPAIGN_LIBRARY_KEY,Array.isArray(list)?list:[])}
+function swcDefaultCampaignTitle(){
+  let active=swcGetCampaigns().find(c=>c.id===localStorage.getItem(ACTIVE_CAMPAIGN_ID_KEY));
+  return active?.title||'The Old Republic Dark Side Campaign';
+}
+function swcActiveCampaignTitle(){return swcDefaultCampaignTitle()}
+function swcCampaignSnapshot(title){
+  swcEnsureCurrentCharacterId();
+  return {
+    id:localStorage.getItem(ACTIVE_CAMPAIGN_ID_KEY)||swcNewId('camp'),
+    title:title||swcDefaultCampaignTitle(),
+    ruleset:char.ruleset||'Saga Edition',
+    era:char.era||'Old Republic',
+    characterId:char.id,
+    characterName:char.name||'Unnamed Character',
+    updated:Date.now(),
+    created:Date.now()
+  };
+}
+function swcBootstrapLibraries(){
+  try{
+    swcEnsureCurrentCharacterId();
+    let chars=swcGetCharacters();
+    if(!chars.some(c=>c.id===char.id)){let snap=swcClone(char);snap.created=snap.created||Date.now();snap.updated=Date.now();chars.unshift(snap);swcSetCharacters(chars)}
+    let camps=swcGetCampaigns();
+    let active=localStorage.getItem(ACTIVE_CAMPAIGN_ID_KEY);
+    if(!active||!camps.some(c=>c.id===active)){
+      let camp=swcCampaignSnapshot('The Old Republic Dark Side Campaign');
+      active=camp.id;
+      localStorage.setItem(ACTIVE_CAMPAIGN_ID_KEY,active);
+      if(!camps.some(c=>c.id===active)){camps.unshift(camp);swcSetCampaigns(camps)}
+    }
+  }catch(e){console.warn('Library bootstrap failed',e)}
+}
+function swcCreateCampaignFromWizard(){
+  swcUpsertCurrentCharacter({silent:true});
+  let input=document.getElementById('newCampaignName');
+  let title=(input?.value||'Dark Side Campaign').trim()||'Dark Side Campaign';
+  let camp={id:swcNewId('camp'),title, ruleset:char.ruleset||'Saga Edition', era:char.era||'Old Republic', characterId:swcEnsureCurrentCharacterId(), characterName:char.name||'Unnamed Character', created:Date.now(), updated:Date.now()};
+  let list=swcGetCampaigns();
+  list.unshift(camp);
+  swcSetCampaigns(list);
+  localStorage.setItem(ACTIVE_CAMPAIGN_ID_KEY,camp.id);
+  swcClearCampaignRuntimeState();
+  renderAll();
+  return camp;
+}
+function swcLoadCampaign(id){
+  let camp=swcGetCampaigns().find(c=>c.id===id);
+  if(!camp)return alert('Campaign not found. It vanished into hyperspace.');
+  localStorage.setItem(ACTIVE_CAMPAIGN_ID_KEY,camp.id);
+  if(camp.characterId){
+    let c=swcGetCharacters().find(x=>x.id===camp.characterId);
+    if(c){char=swcClone(c);localStorage.setItem(ACTIVE_CHARACTER_ID_KEY,char.id);localStorage.setItem(STORAGE_KEY,JSON.stringify(char));}
+  }
+  openCampaign();
+  renderAll();
+}
+function swcClearCampaignRuntimeState(){
+  CAMPAIGN_STATE_KEYS.forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  try{delete window.campaignChat;delete window.questBoard;delete window.journalState;delete window.shopBonds;delete window.campaignSettings;delete window.orMapState;delete window.shipState;delete window.combatState;delete window.campaignSyncLog}catch(e){}
+}
+function swcDeleteCampaign(id){
+  let list=swcGetCampaigns();
+  let target=list.find(c=>c.id===id);
+  if(!target)return;
+  let active=localStorage.getItem(ACTIVE_CAMPAIGN_ID_KEY);
+  let extra=active===id?'\n\nThis is the active campaign, so its active chat/quest/journal/map/ship/combat state will also be cleared.':'';
+  if(!confirm(`Delete campaign "${target.title||'Untitled Campaign'}" from this browser? This cannot be undone.${extra}`))return;
+  list=list.filter(c=>c.id!==id);
+  if(active===id){
+    swcClearCampaignRuntimeState();
+    if(list.length)localStorage.setItem(ACTIVE_CAMPAIGN_ID_KEY,list[0].id);
+    else{
+      let camp=swcCampaignSnapshot('The Old Republic Dark Side Campaign');
+      localStorage.setItem(ACTIVE_CAMPAIGN_ID_KEY,camp.id);
+      list=[camp];
+    }
+  }
+  swcSetCampaigns(list);
+  renderAll();
+}
+function renderDashboardLibraries(){
+  let charBox=document.getElementById('characterLibraryList');
+  if(charBox){
+    let active=localStorage.getItem(ACTIVE_CHARACTER_ID_KEY)||char.id;
+    let chars=swcGetCharacters().sort((a,b)=>(b.updated||0)-(a.updated||0));
+    charBox.innerHTML=chars.length?chars.map(c=>`<div class="library-card ${c.id===active?'selected':''}" onclick="swcLoadCharacter('${q(c.id)}')"><div><h3>${esc(c.name||'Unnamed Character')} ${c.id===active?'<span class="badge gold">Active</span>':''}</h3><p>${esc(swcCharacterSummary(c))}<br>${esc(c.ruleset||'Saga Edition')} · Updated ${new Date(c.updated||Date.now()).toLocaleString()}</p></div><div class="roll-row-actions"><button class="btn small blue" onclick="event.stopPropagation();swcLoadCharacter('${q(c.id)}')">Open</button><button class="btn small danger" onclick="event.stopPropagation();swcDeleteCharacter('${q(c.id)}')">Delete</button></div></div>`).join(''):`<div class="warn">No saved characters yet.</div>`;
+  }
+  let campBox=document.getElementById('campaignLibraryList');
+  if(campBox){
+    let activeCamp=localStorage.getItem(ACTIVE_CAMPAIGN_ID_KEY);
+    let camps=swcGetCampaigns().sort((a,b)=>(b.updated||0)-(a.updated||0));
+    campBox.innerHTML=camps.length?camps.map(c=>`<div class="camp-card ${c.id===activeCamp?'selected':''}" onclick="swcLoadCampaign('${q(c.id)}')"><div class="avatar">🗡️</div><div style="flex:1"><div class="card-title">${esc(c.title||'Untitled Campaign')} ${c.id===activeCamp?'<span class="badge gold">Active</span>':''}</div><div class="card-sub">${esc(c.era||'Old Republic')} · ${esc(c.ruleset||'Custom')} · ${esc(c.characterName||'No character')}<br>Updated ${new Date(c.updated||Date.now()).toLocaleString()}</div><div class="roll-row-actions" style="margin-top:8px;justify-content:flex-start"><button class="btn small blue" onclick="event.stopPropagation();swcLoadCampaign('${q(c.id)}')">Open</button><button class="btn small danger" onclick="event.stopPropagation();swcDeleteCampaign('${q(c.id)}')">Delete</button></div></div></div>`).join(''):`<div class="warn">No saved campaigns yet.</div>`;
+  }
+}
+
 function renderAll(){
 ensureEquipment();
 try{ensureShopExtraItems()}catch(e){}
@@ -4277,7 +4459,7 @@ try{
   if(document.getElementById('sheetAvatar')) document.getElementById('sheetAvatar').innerHTML = char.portrait ? `<img src="${char.portrait}" alt="">` : '⚔️';
   updateRulesetUI();
 }catch(e){}
-document.getElementById('dashName').textContent=char.name;document.getElementById('dashSub').textContent=`Lvl ${char.level} · ${sp().name} ${cls().name}`;document.getElementById('campCharName').textContent=char.name;document.getElementById('campCharSub').textContent=`Lvl ${char.level} ${sp().name} ${cls().name}`;document.getElementById('campaignSub').textContent=`${char.era} · ${char.name}`;document.getElementById('sheetName').textContent=char.name;document.getElementById('sheetSub').textContent=`${sp().name} ${cls().name} · Lvl ${char.level}`;document.getElementById('sheetTopSub').textContent=`${char.ruleset} · ${char.era}`;ensureSheetState();document.getElementById('hpText').textContent=`${char.currentHp} / ${maxHp()}`;document.getElementById('fpText').textContent=`${char.currentFp} / ${maxFp()}`;document.getElementById('hpFill').style.width=maxHp()?((char.currentHp/maxHp())*100)+'%':'0%';document.getElementById('fpFill').style.width=maxFp()?((char.currentFp/maxFp())*100)+'%':'0%';let d=defs();document.getElementById('refDef').textContent=d.ref;document.getElementById('fortDef').textContent=d.fort;document.getElementById('willDef').textContent=d.will;renderSheet();try{renderGameChat()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Quests')renderQuests()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Map')renderORMap()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Ship')renderShip()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Progression')renderProgression()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Inventory')renderInventory()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Shop')renderShop()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Party')renderParty()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Bonds')renderBonds()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Journal')renderJournal()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Campaign')renderCampaignSettings()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Combat')renderCombat()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Training')renderTraining()}catch(e){} }
+swcBootstrapLibraries();renderDashboardLibraries();let dashNameEl=document.getElementById('dashName');if(dashNameEl)dashNameEl.textContent=char.name;let dashSubEl=document.getElementById('dashSub');if(dashSubEl)dashSubEl.textContent=`Lvl ${char.level} · ${sp().name} ${cls().name}`;let campCharNameEl=document.getElementById('campCharName');if(campCharNameEl)campCharNameEl.textContent=char.name;let campCharSubEl=document.getElementById('campCharSub');if(campCharSubEl)campCharSubEl.textContent=`Lvl ${char.level} ${sp().name} ${cls().name}`;let campaignTitleEl=document.getElementById('campaignTitle');if(campaignTitleEl)campaignTitleEl.textContent=swcActiveCampaignTitle();let campaignSubEl=document.getElementById('campaignSub');if(campaignSubEl)campaignSubEl.textContent=`${char.era} · ${char.name}`;document.getElementById('sheetName').textContent=char.name;document.getElementById('sheetSub').textContent=`${sp().name} ${cls().name} · Lvl ${char.level}`;document.getElementById('sheetTopSub').textContent=`${char.ruleset} · ${char.era}`;ensureSheetState();document.getElementById('hpText').textContent=`${char.currentHp} / ${maxHp()}`;document.getElementById('fpText').textContent=`${char.currentFp} / ${maxFp()}`;document.getElementById('hpFill').style.width=maxHp()?((char.currentHp/maxHp())*100)+'%':'0%';document.getElementById('fpFill').style.width=maxFp()?((char.currentFp/maxFp())*100)+'%':'0%';let d=defs();document.getElementById('refDef').textContent=d.ref;document.getElementById('fortDef').textContent=d.fort;document.getElementById('willDef').textContent=d.will;renderSheet();try{renderGameChat()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Quests')renderQuests()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Map')renderORMap()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Ship')renderShip()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Progression')renderProgression()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Inventory')renderInventory()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Shop')renderShop()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Party')renderParty()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Bonds')renderBonds()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Journal')renderJournal()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Campaign')renderCampaignSettings()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Combat')renderCombat()}catch(e){} try{if(document.getElementById('campaignSectionLabel')?.textContent==='Training')renderTraining()}catch(e){} }
 function renderProgress(){let p=document.getElementById('charProgress');p.innerHTML='';for(let i=1;i<=12;i++){let seg=document.createElement('div');seg.className='seg'+(i<=charStep?' on':'');p.appendChild(seg)}document.getElementById('stepNum').textContent=`Step ${charStep} / 12`;const names={1:'Ruleset',2:'Identity',3:'Portrait',4:'Species',5:'Class',6:'Attributes',7:'Skills',8:'Feats',9:'Talents',10:'Force Powers',11:'Equipment',12:'Background'};document.getElementById('stepName').textContent=names[charStep]}
 
 function modsDisplay(){let mods=activeSpeciesMods();let entries=Object.entries(mods);if(entries.length)return entries.map(([a,m])=>`<span class="badge ${m>0?'good':'bad'}">${a.toUpperCase()} ${m>0?'+':''}${m}</span>`).join('');return `<span class="badge gold">${sp().modsNote||'No ability modifiers'}</span>`}
@@ -9675,6 +9857,373 @@ function swcUpdateVersionBadge1890(){let b=document.getElementById('swcVersionBa
 setInterval(swcInjectCampaignSyncPanel,900);
 setInterval(swcUpdateVersionBadge1890,1000);
 document.addEventListener('DOMContentLoaded',()=>setTimeout(swcInjectCampaignSyncPanel,500));
+
+
+/* --- Custom Image Upload Expansion + In-Game Portrait Manager v1.8.9.2 --- */
+window.SWC_BUILD_VERSION='v1.8.9.2-images';
+function swcUpdateVersionBadge1892(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.9.2 Images'}
+function swcEnsureImageManagerStyles(){
+  if(document.getElementById('swcImageManagerStyles'))return;
+  let style=document.createElement('style');
+  style.id='swcImageManagerStyles';
+  style.textContent=`
+  .swc-image-card{border:1px solid rgba(255,255,255,.09);background:rgba(8,12,22,.72);border-radius:18px;padding:12px;margin-top:12px}
+  .swc-image-card h3{margin:0 0 6px;color:var(--gold);font-size:20px;letter-spacing:.06em}
+  .swc-image-card p{margin:0 0 10px;color:#aab3c6;line-height:1.4}
+  .swc-image-grid{display:grid;gap:10px}
+  .swc-image-grid.two{grid-template-columns:1fr 1fr}
+  .swc-image-mini{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);border-radius:14px;padding:10px}
+  .swc-image-mini h4{margin:0 0 8px;color:#fff1c5;font-size:15px}
+  .swc-image-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .swc-image-actions button{border:1px solid rgba(255,197,27,.35);background:rgba(255,197,27,.11);color:var(--gold);border-radius:12px;padding:9px 12px;font-weight:900}
+  .swc-image-actions button.blue{border-color:rgba(66,200,255,.34);background:rgba(66,200,255,.09);color:#42c8ff}
+  .swc-image-actions button.red{border-color:rgba(220,38,38,.30);background:rgba(220,38,38,.10);color:#ffb3b3}
+  .swc-image-row{display:grid;gap:8px}
+  .swc-image-entity{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:12px;padding:10px}
+  .swc-image-entity strong{color:#fff1c5;display:block}
+  .swc-image-entity small{display:block;color:#97a2b8;line-height:1.35}
+  .swc-image-entity .swc-image-actions{justify-content:flex-end}
+  @media(max-width:700px){.swc-image-grid.two{grid-template-columns:1fr}.swc-image-entity{flex-direction:column;align-items:flex-start}.swc-image-entity .swc-image-actions{justify-content:flex-start}}
+  `;
+  document.head.appendChild(style);
+}
+function swcCompressGenericImage(file, callback, opts={}){
+  const max=Number(opts.max||768);
+  const square=!!opts.square;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      let canvas=document.createElement('canvas');
+      let ctx=canvas.getContext('2d');
+      if(square){
+        canvas.width=max; canvas.height=max;
+        ctx.fillStyle='#0b1020'; ctx.fillRect(0,0,max,max);
+        let scale=Math.max(max/img.width,max/img.height);
+        let w=img.width*scale, h=img.height*scale;
+        ctx.drawImage(img,(max-w)/2,(max-h)/2,w,h);
+      }else{
+        let scale=Math.min(1,max/Math.max(img.width,img.height));
+        let w=Math.max(1,Math.round(img.width*scale));
+        let h=Math.max(1,Math.round(img.height*scale));
+        canvas.width=w; canvas.height=h;
+        ctx.drawImage(img,0,0,w,h);
+      }
+      let data='';
+      try{data=canvas.toDataURL('image/jpeg',0.9)}catch(err){data=e.target.result}
+      callback(data);
+    };
+    img.onerror=function(){callback(e.target.result)};
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function swcSavePlayerImages(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(char))}catch(e){}
+  try{if(typeof swcUpsertCurrentCharacter==='function')swcUpsertCurrentCharacter({silent:true})}catch(e){}
+}
+function swcOpenPlayerPortraitPicker(event){
+  if(event){try{event.preventDefault();event.stopPropagation()}catch(e){}}
+  let input=document.getElementById('swcGlobalPlayerPortraitInput');
+  if(!input){
+    input=document.createElement('input');
+    input.type='file'; input.accept='image/*'; input.id='swcGlobalPlayerPortraitInput';
+    input.style.cssText='position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    input.onchange=function(ev){
+      let file=ev?.target?.files && ev.target.files[0];
+      if(!file)return;
+      if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+      swcCompressGenericImage(file,function(data){
+        char.portrait=data||null;
+        swcSavePlayerImages();
+        try{renderCharStep()}catch(e){}
+        try{renderAll()}catch(e){}
+        try{if(document.getElementById('campaignSectionLabel')?.textContent==='Combat')renderCombat()}catch(e){}
+        try{ev.target.value=''}catch(e){}
+      },{max:960,square:false});
+    };
+    document.body.appendChild(input);
+  }
+  input.click();
+}
+function swcClearPlayerPortrait(){
+  char.portrait=null;
+  swcSavePlayerImages();
+  try{renderCharStep()}catch(e){}
+  try{renderAll()}catch(e){}
+}
+function swcOpenManagedEntityImagePicker(type,id,label,event){
+  if(event){try{event.preventDefault();event.stopPropagation()}catch(e){}}
+  window.swcManagedImageTarget={type,id,label};
+  let input=document.getElementById('swcManagedEntityImageInput');
+  if(!input){
+    input=document.createElement('input');
+    input.type='file'; input.accept='image/*'; input.id='swcManagedEntityImageInput';
+    input.style.cssText='position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    input.onchange=function(ev){
+      let file=ev?.target?.files && ev.target.files[0];
+      if(!file)return;
+      if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+      let target=window.swcManagedImageTarget||{};
+      swcCompressGenericImage(file,function(data){ swcApplyManagedEntityImage(target,data||''); try{ev.target.value=''}catch(e){} },{max:640,square:true});
+    };
+    document.body.appendChild(input);
+  }
+  input.click();
+}
+function swcApplyManagedEntityImage(target,data){
+  if(!target||!target.type)return;
+  if(target.type==='journal-npc'){
+    try{ensureJournal(); let n=(window.journalState.npcs||[]).find(x=>x.id===target.id); if(n){n.portrait=data||companionPortraitSvg(n); saveJournal(); renderJournal();}}
+    catch(e){console.warn(e)}
+    return;
+  }
+  if(target.type==='bond'){
+    try{ensureBonds(); let b=(window.shopBonds.contacts||[]).find(x=>x.id===target.id); if(b){b.portrait=data||companionPortraitSvg(b); saveBonds();}}
+    catch(e){console.warn(e)}
+    try{ensureParty(); (char.party.roster||[]).forEach(c=>{if(c.id==='bond_'+target.id)c.portrait=data||companionPortraitSvg(c)}); partySave();}
+    catch(e){console.warn(e)}
+    try{renderBonds()}catch(e){}
+    try{if(document.getElementById('campaignSectionLabel')?.textContent==='Party')renderParty()}catch(e){}
+    return;
+  }
+  if(target.type==='companion'){
+    try{ensureParty(); let c=(char.party.roster||[]).find(x=>x.id===target.id); if(c){c.portrait=data||companionPortraitSvg(c); partySave(); renderParty();}}
+    catch(e){console.warn(e)}
+    return;
+  }
+}
+function swcClearManagedEntityImage(type,id){
+  swcApplyManagedEntityImage({type,id},'');
+}
+function swcInjectSheetPortraitManager(){
+  swcEnsureImageManagerStyles();
+  let strip=document.querySelector('#characterSheet .sheet-portrait-strip');
+  if(!strip)return;
+  let existing=document.getElementById('swcPlayerPortraitManager');
+  let html=`<div class="swc-image-card" id="swcPlayerPortraitManager"><h3>Player Images</h3><p>Use your own images at any time. Your main portrait and your combat token are now handled separately.</p><div class="swc-image-grid two"><div class="swc-image-mini"><h4>Main Portrait</h4><div class="swc-image-actions"><button class="blue" onclick="swcOpenPlayerPortraitPicker(event)">${char.portrait?'Change Portrait':'Upload Portrait'}</button>${char.portrait?'<button class="red" onclick="swcClearPlayerPortrait()">Remove Portrait</button>':''}</div></div><div class="swc-image-mini"><h4>Combat Token</h4><div class="swc-image-actions"><button class="blue" onclick="openTokenUploadPicker(event)">${(char.tokenPortrait||char.portrait)?'Change Token':'Upload Token'}</button><button onclick="useMainPortraitAsToken()">Use Portrait</button><button onclick="generateTokenPlaceholder()">Generate</button>${char.tokenPortrait?'<button class="red" onclick="clearTokenPortrait()">Remove Token</button>':''}</div></div></div><p class="note" style="margin-top:10px">Combat will use the token image when available. If no token is set, it falls back to the main portrait.</p></div>`;
+  if(existing)existing.outerHTML=html; else strip.insertAdjacentHTML('beforeend',html);
+}
+function swcJournalImagePanelHtml(){
+  try{ensureJournal(); let list=(window.journalState.npcs||[]); return `<div class="swc-image-card" id="swcJournalImageManager"><h3>NPC Portrait Manager</h3><p>Upload your own images for named NPCs in Journal → NPCs.</p><div class="swc-image-row">${list.length?list.map(n=>`<div class="swc-image-entity"><div><strong>${esc(n.name||'Unnamed NPC')}</strong><small>${esc(n.species||'Unknown')} · ${esc(n.role||'NPC')}</small></div><div class="swc-image-actions"><button class="blue" onclick="swcOpenManagedEntityImagePicker('journal-npc','${q(n.id)}','${esc(n.name)}',event)">${n.portrait?'Change Image':'Upload Image'}</button><button class="red" onclick="swcClearManagedEntityImage('journal-npc','${q(n.id)}')">Remove</button></div></div>`).join(''):`<div class="note">No Journal NPCs yet.</div>`}</div></div>`;}catch(e){return ''}
+}
+function swcBondsImagePanelHtml(){
+  try{ensureBonds(); let list=(window.shopBonds.contacts||[]); return `<div class="swc-image-card" id="swcBondsImageManager"><h3>Bonds Portrait Manager</h3><p>Upload custom portraits for your Bond contacts at any time.</p><div class="swc-image-row">${list.length?list.map(b=>`<div class="swc-image-entity"><div><strong>${esc(b.name||'Unnamed Contact')}</strong><small>${esc(b.species||'Unknown')} · ${esc(b.title||'Contact')}</small></div><div class="swc-image-actions"><button class="blue" onclick="swcOpenManagedEntityImagePicker('bond','${q(b.id)}','${esc(b.name)}',event)">${b.portrait?'Change Image':'Upload Image'}</button><button class="red" onclick="swcClearManagedEntityImage('bond','${q(b.id)}')">Remove</button></div></div>`).join(''):`<div class="note">No Bond contacts yet.</div>`}</div></div>`;}catch(e){return ''}
+}
+function swcPartyImagePanelHtml(){
+  try{ensureParty(); let list=(char.party.roster||[]); return `<div class="swc-image-card" id="swcPartyImageManager"><h3>Companion Portrait Manager</h3><p>Upload custom portraits for companions and contacts in your party roster.</p><div class="swc-image-row">${list.length?list.map(c=>`<div class="swc-image-entity"><div><strong>${esc(c.name||'Unnamed Companion')}</strong><small>${esc(c.species||'Unknown')} · ${esc(c.className||'Companion')}</small></div><div class="swc-image-actions"><button class="blue" onclick="swcOpenManagedEntityImagePicker('companion','${q(c.id)}','${esc(c.name)}',event)">${c.portrait?'Change Image':'Upload Image'}</button><button class="red" onclick="swcClearManagedEntityImage('companion','${q(c.id)}')">Remove</button></div></div>`).join(''):`<div class="note">No companions in roster yet.</div>`}</div></div>`;}catch(e){return ''}
+}
+function swcInjectSectionImageManagers(){
+  swcEnsureImageManagerStyles();
+  let label=(document.getElementById('campaignSectionLabel')?.textContent||'').trim().toLowerCase();
+  if(label==='journal'){
+    let board=document.querySelector('.journal-board');
+    if(board){let old=document.getElementById('swcJournalImageManager'); if(old)old.remove(); let hero=board.querySelector('.journal-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcJournalImagePanelHtml())}
+  }
+  if(label==='bonds'){
+    let board=document.querySelector('.bonds-board');
+    if(board){let old=document.getElementById('swcBondsImageManager'); if(old)old.remove(); let hero=board.querySelector('.bonds-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcBondsImagePanelHtml())}
+  }
+  if(label==='party'){
+    let board=document.querySelector('.party-board');
+    if(board){let old=document.getElementById('swcPartyImageManager'); if(old)old.remove(); let hero=board.querySelector('.party-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcPartyImagePanelHtml())}
+  }
+}
+function swcSyncCombatPlayerImages(){
+  try{
+    if(typeof ensureCombat==='function')ensureCombat();
+    let b=(typeof battle==='function')?battle():null;
+    if(!b||!Array.isArray(b.tokens))return;
+    let changed=false;
+    b.tokens.forEach(t=>{
+      if(t.type==='player'||t.source==='player'){
+        let tok=char.tokenPortrait||'';
+        let por=char.portrait||'';
+        if(t.tokenPortrait!==tok){t.tokenPortrait=tok; changed=true;}
+        if(t.portrait!==por){t.portrait=por; changed=true;}
+      }
+    });
+    if(changed && typeof saveCombat==='function')saveCombat();
+  }catch(e){console.warn(e)}
+}
+(function(){
+  const oldRenderAll=window.renderAll;
+  if(typeof oldRenderAll==='function'&&!oldRenderAll.__swcImagePatch1892){
+    const wrapped=function(...args){
+      let result=oldRenderAll.apply(this,args);
+      try{swcInjectSheetPortraitManager()}catch(e){}
+      try{swcInjectSectionImageManagers()}catch(e){}
+      try{swcSyncCombatPlayerImages()}catch(e){}
+      return result;
+    };
+    wrapped.__swcImagePatch1892=true;
+    window.renderAll=wrapped;
+  }
+  const oldRenderCharStep=window.renderCharStep;
+  if(typeof oldRenderCharStep==='function'&&!oldRenderCharStep.__swcImagePatch1892){
+    const wrappedStep=function(...args){ let result=oldRenderCharStep.apply(this,args); try{swcInjectSheetPortraitManager()}catch(e){} return result;};
+    wrappedStep.__swcImagePatch1892=true;
+    window.renderCharStep=wrappedStep;
+  }
+  const oldRenderCombat=window.renderCombat;
+  if(typeof oldRenderCombat==='function'&&!oldRenderCombat.__swcImagePatch1892){
+    const wrappedCombat=function(...args){ try{swcSyncCombatPlayerImages()}catch(e){} return oldRenderCombat.apply(this,args); };
+    wrappedCombat.__swcImagePatch1892=true;
+    window.renderCombat=wrappedCombat;
+  }
+})();
+setInterval(swcUpdateVersionBadge1892,1000);
+setInterval(function(){ try{swcInjectSheetPortraitManager();swcInjectSectionImageManagers();}catch(e){} },1200);
+
+
+/* --- Image Manager Visibility Fix + Inline Upload Buttons v1.8.9.3 --- */
+window.SWC_BUILD_VERSION='v1.8.9.3-image-manager-visible';
+function swcUpdateVersionBadge1893(){let b=document.getElementById('swcVersionBadge');if(b)b.textContent='v1.8.9.3 Images+'}
+function swcFindCardByName(selector,name){
+  name=String(name||'').trim();
+  if(!name)return null;
+  return Array.from(document.querySelectorAll(selector)).find(card=>{
+    let h=card.querySelector('h3,h4,.bond-list-name,.bond-profile-name,.party-name');
+    return (h?.textContent||card.textContent||'').trim().includes(name);
+  })||null;
+}
+function swcImageButtonRow(type,id,label,hasImage){
+  return `<div class="swc-image-actions swc-inline-image-actions" data-swc-inline-image="${esc(type)}:${esc(id)}" style="margin-top:8px"><button class="blue" onclick="swcOpenManagedEntityImagePicker('${esc(type)}','${q(id)}','${esc(label||'Image')}',event)">${hasImage?'Change Image':'Upload Image'}</button>${hasImage?`<button class="red" onclick="swcClearManagedEntityImage('${esc(type)}','${q(id)}')">Remove Image</button>`:''}</div>`;
+}
+function swcInjectInlineImageButtons(){
+  try{swcEnsureImageManagerStyles()}catch(e){}
+  try{
+    ensureBonds();
+    (window.shopBonds.contacts||[]).forEach(b=>{
+      let card=swcFindCardByName('.bond-list-item',b.name);
+      if(card && !card.querySelector(`[data-swc-inline-image="bond:${CSS.escape?CSS.escape(b.id):b.id}"]`)){
+        let actions=card.querySelector('.bond-list-actions')||card;
+        actions.insertAdjacentHTML('beforeend',swcImageButtonRow('bond',b.id,b.name,!!b.portrait));
+      }
+    });
+    let active=(typeof activeBond==='function')?activeBond():null;
+    if(active){
+      let actions=document.querySelector('.bond-profile .bond-profile-actions');
+      if(actions && !actions.querySelector(`[data-swc-inline-image^="bond:"]`))actions.insertAdjacentHTML('beforeend',swcImageButtonRow('bond',active.id,active.name,!!active.portrait));
+    }
+  }catch(e){console.warn('Bond image button inject failed',e)}
+  try{
+    ensureJournal();
+    (window.journalState.npcs||[]).forEach(n=>{
+      let card=swcFindCardByName('.journal-card',n.name);
+      if(card && !card.querySelector(`[data-swc-inline-image="journal-npc:${CSS.escape?CSS.escape(n.id):n.id}"]`)){
+        let actions=card.querySelector('.journal-card-actions');
+        if(!actions){actions=document.createElement('div');actions.className='journal-card-actions';card.appendChild(actions)}
+        actions.insertAdjacentHTML('beforeend',swcImageButtonRow('journal-npc',n.id,n.name,!!n.portrait));
+      }
+    });
+  }catch(e){console.warn('Journal image button inject failed',e)}
+  try{
+    ensureParty();
+    (char.party?.roster||[]).forEach(c=>{
+      ['.party-card','.party-roster-card'].forEach(sel=>{
+        let card=Array.from(document.querySelectorAll(sel)).find(el=>el.textContent&&el.textContent.includes(c.name));
+        if(card && !card.querySelector(`[data-swc-inline-image="companion:${CSS.escape?CSS.escape(c.id):c.id}"]`)){
+          let actions=card.querySelector('.party-actions');
+          if(!actions){actions=document.createElement('div');actions.className='party-actions';card.appendChild(actions)}
+          actions.insertAdjacentHTML('beforeend',swcImageButtonRow('companion',c.id,c.name,!!c.portrait));
+        }
+      });
+    });
+  }catch(e){console.warn('Party image button inject failed',e)}
+}
+function swcInjectSectionImageManagers(){
+  swcEnsureImageManagerStyles();
+  let label=(document.getElementById('campaignSectionLabel')?.textContent||'').trim().toLowerCase();
+  if(label==='journal'){
+    let board=document.querySelector('.journal-board');
+    if(board){let old=document.getElementById('swcJournalImageManager'); if(old)old.remove(); let hero=board.querySelector('.journal-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcJournalImagePanelHtml());}
+  }
+  if(label==='bonds'){
+    let board=document.querySelector('.bond-page,.bonds-board');
+    if(board){let old=document.getElementById('swcBondsImageManager'); if(old)old.remove(); let hero=board.querySelector('.bond-hero,.bonds-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcBondsImagePanelHtml());}
+  }
+  if(label==='party'){
+    let board=document.querySelector('.party-board');
+    if(board){let old=document.getElementById('swcPartyImageManager'); if(old)old.remove(); let hero=board.querySelector('.party-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcPartyImagePanelHtml());}
+  }
+  swcInjectInlineImageButtons();
+}
+function swcSelectedCombatImageToken(){
+  try{let b=(typeof battle==='function')?battle():null;if(!b)return null;return combatToken(b.selectedTokenId)||combatToken(b.selectedTargetId)||currentCombatToken()||null}catch(e){return null}
+}
+function swcOpenCombatTokenImagePicker(tokenId,event){
+  if(event){try{event.preventDefault();event.stopPropagation()}catch(e){}}
+  let b=(typeof battle==='function')?battle():null;if(!b)return alert('No active combat.');
+  let t=combatToken(tokenId)||swcSelectedCombatImageToken(); if(!t)return alert('Select a combat token first.');
+  window.swcCombatImageTarget=t.id;
+  let input=document.getElementById('swcCombatTokenImageInput');
+  if(!input){
+    input=document.createElement('input');input.type='file';input.accept='image/*';input.id='swcCombatTokenImageInput';input.style.cssText='position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    input.onchange=function(ev){
+      let file=ev?.target?.files&&ev.target.files[0]; if(!file)return;
+      if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+      swcCompressGenericImage(file,function(data){
+        let bt=(typeof battle==='function')?battle():null; let tok=bt?(bt.tokens||[]).find(x=>x.id===window.swcCombatImageTarget):null;
+        if(tok){tok.tokenPortrait=data;tok.portrait=data;if(tok.type==='player'||tok.source==='player'){char.tokenPortrait=data;swcSavePlayerImages();} saveCombat(); renderCombat();}
+        try{ev.target.value=''}catch(e){}
+      },{max:256,square:true});
+    };
+    document.body.appendChild(input);
+  }
+  input.click();
+}
+function swcCombatImagePanelHtml(){
+  let t=swcSelectedCombatImageToken();
+  if(!t)return '';
+  let isPlayer=t.type==='player'||t.source==='player';
+  let has=!!(t.tokenPortrait||t.portrait||(isPlayer&&(char.tokenPortrait||char.portrait)));
+  return `<div class="swc-image-card" id="swcCombatImageManager"><h3>Combat Token Image</h3><p>Selected token: <b>${esc(t.name||'Token')}</b>. Upload a custom image here and the battle map uses it immediately.</p><div class="swc-image-actions"><button class="blue" onclick="swcOpenCombatTokenImagePicker('${q(t.id)}',event)">${has?'Change Selected Token':'Upload Selected Token'}</button>${isPlayer?`<button onclick="openTokenUploadPicker(event)">Change Player Token</button><button onclick="swcOpenPlayerPortraitPicker(event)">Change Player Portrait</button>`:''}</div></div>`;
+}
+function swcInjectCombatImagePanel(){
+  try{
+    let label=(document.getElementById('campaignSectionLabel')?.textContent||'').trim().toLowerCase();
+    if(label!=='combat')return;
+    let board=document.querySelector('.combat-board'); if(!board)return;
+    let old=document.getElementById('swcCombatImageManager'); if(old)old.remove();
+    let hero=board.querySelector('.combat-hero'); if(hero)hero.insertAdjacentHTML('afterend',swcCombatImagePanelHtml());
+  }catch(e){console.warn('Combat image panel failed',e)}
+}
+(function(){
+  const oldSetToken=window.setTokenPortraitData;
+  if(typeof oldSetToken==='function'&&!oldSetToken.__swcImagePatch1893){
+    const wrapped=function(data){let r=oldSetToken.apply(this,arguments);try{swcSavePlayerImages();swcSyncCombatPlayerImages()}catch(e){}return r};
+    wrapped.__swcImagePatch1893=true; window.setTokenPortraitData=wrapped;
+  }
+  const oldHandlePortrait=window.handlePortraitUpload;
+  if(typeof oldHandlePortrait==='function'&&!oldHandlePortrait.__swcImagePatch1893){
+    const wrapped=function(event){
+      const file=event?.target?.files&&event.target.files[0];
+      if(!file)return oldHandlePortrait.apply(this,arguments);
+      if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+      swcCompressGenericImage(file,function(data){char.portrait=data||null;swcSavePlayerImages();try{renderCharStep()}catch(e){}try{renderAll()}catch(e){}try{event.target.value=''}catch(e){}},{max:960,square:false});
+    };
+    wrapped.__swcImagePatch1893=true; window.handlePortraitUpload=wrapped;
+  }
+  ['renderBonds','renderJournal','renderParty'].forEach(fn=>{
+    const old=window[fn];
+    if(typeof old==='function'&&!old.__swcImagePatch1893){
+      const wrapped=function(...args){let result=old.apply(this,args);try{swcInjectSectionImageManagers();swcInjectInlineImageButtons()}catch(e){}return result};
+      wrapped.__swcImagePatch1893=true; window[fn]=wrapped;
+    }
+  });
+  const oldRenderCombat=window.renderCombat;
+  if(typeof oldRenderCombat==='function'&&!oldRenderCombat.__swcCombatImagePatch1893){
+    const wrapped=function(...args){let result=oldRenderCombat.apply(this,args);try{swcSyncCombatPlayerImages();swcInjectCombatImagePanel()}catch(e){}return result};
+    wrapped.__swcCombatImagePatch1893=true; window.renderCombat=wrapped;
+  }
+  const oldRenderAll=window.renderAll;
+  if(typeof oldRenderAll==='function'&&!oldRenderAll.__swcImagePatch1893Visible){
+    const wrapped=function(...args){let result=oldRenderAll.apply(this,args);try{swcInjectSheetPortraitManager();swcInjectSectionImageManagers();swcInjectInlineImageButtons();swcInjectCombatImagePanel()}catch(e){}return result};
+    wrapped.__swcImagePatch1893Visible=true; window.renderAll=wrapped;
+  }
+})();
+setInterval(function(){try{swcInjectSheetPortraitManager();swcInjectSectionImageManagers();swcInjectInlineImageButtons();swcInjectCombatImagePanel();swcUpdateVersionBadge1893()}catch(e){}},900);
 
 
 applyClassDefaults();renderAll();renderCharStep();
